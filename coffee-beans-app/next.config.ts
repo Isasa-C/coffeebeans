@@ -1,4 +1,3 @@
-import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -7,7 +6,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "8mb",
     },
   },
-  outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
       {
@@ -15,9 +13,6 @@ const nextConfig: NextConfig = {
         hostname: "**.public.blob.vercel-storage.com",
       },
     ],
-  },
-  turbopack: {
-    root: path.join(__dirname),
   },
 };
 
