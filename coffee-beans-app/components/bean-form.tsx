@@ -69,6 +69,7 @@ export function BeanForm() {
     payload.append("brand", formValues.brand);
     payload.append("price", formValues.price);
     payload.append("quantity", formValues.quantity);
+    payload.append("weight", formValues.weight);
     payload.append("rating", formValues.rating);
     payload.append("bestFor", formValues.bestFor);
     payload.append("comments", formValues.comments);

@@ -87,21 +87,21 @@ export function BeanFormFields({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="quantity">
-            {messages.quantity}
+          <label className="mb-2 block text-sm font-semibold" htmlFor="weight">
+            {messages.weight}
           </label>
           <input
-            id="quantity"
-            name="quantity"
+            id="weight"
+            name="weight"
             type="number"
             min="1"
             step="1"
             className="field"
-            placeholder="1"
-            value={formValues.quantity}
+            placeholder="250"
+            value={formValues.weight}
             onChange={onChange}
           />
-          <FieldError message={fieldErrors.quantity?.[0]} />
+          <FieldError message={fieldErrors.weight?.[0]} />
         </div>
 
         <div>
@@ -116,7 +116,7 @@ export function BeanFormFields({
             max="5"
             step="0.1"
             className="field"
-            placeholder="4"
+            placeholder="4.0"
             value={formValues.rating}
             onChange={onChange}
           />

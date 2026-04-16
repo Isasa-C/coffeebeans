@@ -12,10 +12,13 @@ model CoffeeBean {
   brand     String
   price     Float
   quantity  Int
+  weight    Int      @default(250)
   rating    Float
   bestFor   String
   comments  String?
   imageUrl  String
+  imageFit  String   @default("contain")
+  location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

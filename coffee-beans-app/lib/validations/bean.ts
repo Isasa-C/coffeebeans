@@ -19,6 +19,11 @@ const baseBeanSchema = z.object({
     .int("Quantity must be a whole number.")
     .min(1, "Quantity must be at least 1.")
     .max(9999, "Quantity is too large."),
+  weight: z.coerce
+    .number({ invalid_type_error: "Weight is required." })
+    .int("Weight must be a whole number.")
+    .min(1, "Weight must be at least 1 g.")
+    .max(10000, "Weight is too large."),
   rating: z.coerce
     .number({ invalid_type_error: "Rating is required." })
     .min(1, "Rating must be at least 1.")

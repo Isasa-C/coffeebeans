@@ -17,9 +17,14 @@ import { BeanFormFields } from "./bean-form-fields";
 
 type BeanCardProps = {
   bean: BeanRecord;
+  priceStats: {
+    min: number;
+    max: number;
+    average: number;
+  };
 };
 
-export function BeanCard({ bean }: BeanCardProps) {
+export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const router = useRouter();
   const { messages } = useLanguage();
   const [currentBean, setCurrentBean] = useState(bean);
@@ -32,6 +37,17 @@ export function BeanCard({ bean }: BeanCardProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const priceRange = Math.max(priceStats.max - priceStats.min, 1);
+  const pricePosition = ((currentBean.price - priceStats.min) / priceRange) * 100;
+  const priceDifference = currentBean.price - priceStats.average;
+  const safeWeight = currentBean.weight > 0 ? currentBean.weight : 250;
+  const unitPrice = currentBean.price / safeWeight;
+  const priceTrendLabel =
+    Math.abs(priceDifference) < 0.5
+      ? messages.priceTrendAverage
+      : priceDifference > 0
+        ? messages.priceTrendAboveAverage
+        : messages.priceTrendBelowAverage;
 
   function handleChange(
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -102,6 +118,7 @@ export function BeanCard({ bean }: BeanCardProps) {
     payload.append("brand", formValues.brand);
     payload.append("price", formValues.price);
     payload.append("quantity", formValues.quantity);
+    payload.append("weight", formValues.weight);
     payload.append("rating", formValues.rating);
     payload.append("bestFor", formValues.bestFor);
     payload.append("comments", formValues.comments);
@@ -275,20 +292,20 @@ export function BeanCard({ bean }: BeanCardProps) {
         </div>
       </div>
       <div className="flex flex-1 flex-col space-y-5 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="grid grid-cols-[1fr_auto] items-start gap-4">
+          <div className="min-h-[4.25rem] space-y-1">
             <h3 className="display-font text-2xl font-semibold">{currentBean.brand}</h3>
-            <p className="mt-1 text-sm text-muted">
+            <p className="text-sm text-muted">
               {messages.addedOn} {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
             </p>
           </div>
-          <div className="rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
-            {currentBean.rating.toFixed(1)} / 5
+          <div className="whitespace-nowrap rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
+            {currentBean.rating.toFixed(1)} / 5.0
           </div>
         </div>
 
         <dl className="grid grid-cols-3 gap-3 text-sm">
-          <div className="rounded-2xl border border-line bg-card p-3">
+          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
             <dt className="text-muted">{messages.priceLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {new Intl.NumberFormat(messages.locale, {
@@ -297,13 +314,13 @@ export function BeanCard({ bean }: BeanCardProps) {
               }).format(currentBean.price)}
             </dd>
           </div>
-          <div className="rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">{messages.quantityLabel}</dt>
+          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
+            <dt className="text-muted">{messages.weightLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
-              {currentBean.quantity}
+              {safeWeight} g
             </dd>
           </div>
-          <div className="rounded-2xl border border-line bg-card p-3">
+          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
             <dt className="text-muted">{messages.bestForLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
@@ -311,7 +328,40 @@ export function BeanCard({ bean }: BeanCardProps) {
           </div>
         </dl>
 
-        <div className="rounded-2xl border border-dashed border-line bg-white/50 p-4">
+        <div className="rounded-2xl border border-line bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-foreground">
+              {messages.priceTrend}
+            </p>
+            <span className="rounded-full bg-[rgba(138,75,42,0.12)] px-3 py-1 text-xs font-semibold text-accent">
+              {priceTrendLabel}
+            </span>
+          </div>
+          <div className="mt-3 text-sm text-muted">
+            {messages.unitPriceLabel}{" "}
+            <span className="font-semibold text-foreground">
+              {new Intl.NumberFormat(messages.locale, {
+                style: "currency",
+                currency: "EUR",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 3,
+              }).format(unitPrice)}
+              /g
+            </span>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-[rgba(138,75,42,0.12)]">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#b97b4f] to-[#5c3520]"
+              style={{ width: `${Math.min(Math.max(pricePosition, 8), 100)}%` }}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-xs text-muted">
+            <span>{messages.priceTrendLow}</span>
+            <span>{messages.priceTrendHigh}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col rounded-2xl border border-dashed border-line bg-white/50 p-4">
           <p className="max-h-[8.75rem] overflow-y-auto pr-1 text-sm leading-7 text-muted">
             {currentBean.comments || messages.noComments}
           </p>

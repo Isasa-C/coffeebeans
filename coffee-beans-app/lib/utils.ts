@@ -1,10 +1,13 @@
 import type { CoffeeBean } from "@prisma/client";
 
+const DEFAULT_WEIGHT_GRAMS = 250;
+
 export type BeanRecord = {
   id: string;
   brand: string;
   price: number;
   quantity: number;
+  weight: number;
   rating: number;
   bestFor: string;
   comments: string | null;
@@ -26,6 +29,7 @@ export function formatBeanRecord(bean: CoffeeBean): BeanRecord {
     brand: bean.brand,
     price: Number(bean.price),
     quantity: bean.quantity,
+    weight: typeof bean.weight === "number" && bean.weight > 0 ? bean.weight : DEFAULT_WEIGHT_GRAMS,
     rating: bean.rating,
     bestFor: bean.bestFor,
     comments: bean.comments,

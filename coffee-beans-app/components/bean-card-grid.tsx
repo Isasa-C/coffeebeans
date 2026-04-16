@@ -10,10 +10,13 @@ type BeanCardGridProps = {
   beans: BeanRecord[];
 };
 
+type SortOption = "newest" | "oldest" | "priceHigh" | "priceLow";
+
 export function BeanCardGrid({ beans }: BeanCardGridProps) {
   const { messages } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedBestFor, setSelectedBestFor] = useState("all");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const brandOptions = Array.from(new Set(beans.map((bean) => bean.brand))).sort(
     (left, right) => left.localeCompare(right),
@@ -29,6 +32,28 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
 
     return matchesBrand && matchesBestFor;
   });
+  const sortedBeans = [...filteredBeans].sort((left, right) => {
+    if (sortBy === "oldest") {
+      return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+    }
+
+    if (sortBy === "priceHigh") {
+      return right.price - left.price;
+    }
+
+    if (sortBy === "priceLow") {
+      return left.price - right.price;
+    }
+
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  });
+  const visiblePrices = sortedBeans.map((bean) => bean.price);
+  const minPrice = visiblePrices.length > 0 ? Math.min(...visiblePrices) : 0;
+  const maxPrice = visiblePrices.length > 0 ? Math.max(...visiblePrices) : 0;
+  const averagePrice =
+    visiblePrices.length > 0
+      ? visiblePrices.reduce((sum, price) => sum + price, 0) / visiblePrices.length
+      : 0;
 
   if (beans.length === 0) {
     return <EmptyState />;
@@ -51,7 +76,7 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <label
               className="mb-2 block text-sm font-semibold text-foreground"
@@ -95,10 +120,30 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               ))}
             </select>
           </div>
+
+          <div>
+            <label
+              className="mb-2 block text-sm font-semibold text-foreground"
+              htmlFor="sortFilter"
+            >
+              {messages.sortBy}
+            </label>
+            <select
+              id="sortFilter"
+              className="field appearance-none"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as SortOption)}
+            >
+              <option value="newest">{messages.newestFirst}</option>
+              <option value="oldest">{messages.oldestFirst}</option>
+              <option value="priceHigh">{messages.priceHighToLow}</option>
+              <option value="priceLow">{messages.priceLowToHigh}</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {filteredBeans.length === 0 ? (
+      {sortedBeans.length === 0 ? (
         <div className="card-surface rounded-[1.75rem] px-6 py-10 text-center sm:px-10">
           <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
             {messages.noMatches}
@@ -109,13 +154,20 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredBeans.map((bean, index) => (
+          {sortedBeans.map((bean, index) => (
             <div
               key={`${bean.id}-${bean.updatedAt}`}
               className="animate-rise h-full"
               style={{ animationDelay: `${index * 60}ms` }}
             >
-              <BeanCard bean={bean} />
+              <BeanCard
+                bean={bean}
+                priceStats={{
+                  min: minPrice,
+                  max: maxPrice,
+                  average: averagePrice,
+                }}
+              />
             </div>
           ))}
         </div>
