@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "8mb",
     },
   },
+  outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
       {
