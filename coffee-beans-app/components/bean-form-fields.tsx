@@ -1,4 +1,5 @@
 import type { ChangeEvent, RefObject } from "react";
+import { useLanguage } from "@/components/language-provider";
 import type { BeanFormValues } from "@/lib/bean-form";
 import {
   bestForOptions,
@@ -31,17 +32,19 @@ export function BeanFormFields({
   onImageChange,
   onQuickPickBrand,
 }: BeanFormFieldsProps) {
+  const { messages } = useLanguage();
+
   return (
     <>
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="brand">
-          Brand
+          {messages.brand}
         </label>
         <input
           id="brand"
           name="brand"
           className="field"
-          placeholder="Choose or type a brand"
+          placeholder={messages.brandPlaceholder}
           value={formValues.brand}
           onChange={onChange}
         />
@@ -67,7 +70,7 @@ export function BeanFormFields({
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className="mb-2 block text-sm font-semibold" htmlFor="price">
-            Price (€)
+            {messages.price}
           </label>
           <input
             id="price"
@@ -85,7 +88,7 @@ export function BeanFormFields({
 
         <div>
           <label className="mb-2 block text-sm font-semibold" htmlFor="quantity">
-            Qty
+            {messages.quantity}
           </label>
           <input
             id="quantity"
@@ -103,7 +106,7 @@ export function BeanFormFields({
 
         <div>
           <label className="mb-2 block text-sm font-semibold" htmlFor="rating">
-            Rating
+            {messages.rating}
           </label>
           <input
             id="rating"
@@ -123,7 +126,7 @@ export function BeanFormFields({
 
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="bestFor">
-          Best For
+          {messages.bestFor}
         </label>
         <select
           id="bestFor"
@@ -134,7 +137,7 @@ export function BeanFormFields({
         >
           {bestForOptions.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {messages.bestForOptions[option]}
             </option>
           ))}
         </select>
@@ -143,14 +146,14 @@ export function BeanFormFields({
 
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="comments">
-          Comments
+          {messages.comments}
         </label>
         <textarea
           id="comments"
           name="comments"
           rows={4}
           className="field resize-none"
-          placeholder="Chocolate notes, citrus finish, excellent with espresso..."
+          placeholder={messages.commentsPlaceholder}
           value={formValues.comments}
           onChange={onChange}
         />
@@ -159,7 +162,7 @@ export function BeanFormFields({
 
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="image">
-          Bean Image (optional)
+          {messages.imageLabel}
         </label>
         <input
           id="image"

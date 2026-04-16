@@ -8,9 +8,10 @@ import {
   useState,
   useTransition,
 } from "react";
+import { useLanguage } from "@/components/language-provider";
 import { useRouter } from "next/navigation";
 import { getBeanFormValues } from "@/lib/bean-form";
-import { formatCurrency, type BeanRecord } from "@/lib/utils";
+import { type BeanRecord } from "@/lib/utils";
 import { type BeanUpdateErrors } from "@/lib/validations/bean";
 import { BeanFormFields } from "./bean-form-fields";
 
@@ -20,6 +21,7 @@ type BeanCardProps = {
 
 export function BeanCard({ bean }: BeanCardProps) {
   const router = useRouter();
+  const { messages } = useLanguage();
   const [currentBean, setCurrentBean] = useState(bean);
   const [isDeleted, setIsDeleted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -124,7 +126,7 @@ export function BeanCard({ bean }: BeanCardProps) {
 
         if (!response.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          setActionError(result.error ?? "Unable to update this bean.");
+          setActionError(result.error ?? messages.updateError);
           return;
         }
 
@@ -134,14 +136,14 @@ export function BeanCard({ bean }: BeanCardProps) {
         }
         setFieldErrors({});
         setImageFile(null);
-        setActionMessage(result.message ?? "Coffee bean updated successfully.");
+        setActionMessage(result.message ?? messages.updatedMessage);
         setIsEditing(false);
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
         }
         router.refresh();
       } catch {
-        setActionError("Network error while updating the bean. Please try again.");
+        setActionError(messages.updateNetworkError);
       }
     });
   }
@@ -151,7 +153,7 @@ export function BeanCard({ bean }: BeanCardProps) {
     setActionMessage(null);
 
     const confirmed = window.confirm(
-      "Are you sure you want to delete this coffee bean?",
+      messages.deleteConfirm,
     );
 
     if (!confirmed) {
@@ -170,17 +172,17 @@ export function BeanCard({ bean }: BeanCardProps) {
         };
 
         if (!response.ok) {
-          setActionError(result.error ?? "Unable to delete this bean.");
+          setActionError(result.error ?? messages.deleteError);
           return;
         }
 
-        setActionMessage(result.message ?? "Coffee bean deleted successfully.");
+        setActionMessage(result.message ?? messages.deletedMessage);
         setIsDeleted(true);
         window.setTimeout(() => {
           router.refresh();
         }, 700);
       } catch {
-        setActionError("Network error while deleting the bean. Please try again.");
+        setActionError(messages.deleteNetworkError);
       }
     });
   }
@@ -191,7 +193,7 @@ export function BeanCard({ bean }: BeanCardProps) {
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
-              Edit bean
+              {messages.editBean}
             </p>
             <h3 className="display-font mt-2 text-2xl font-semibold">
               {currentBean.brand}
@@ -202,7 +204,7 @@ export function BeanCard({ bean }: BeanCardProps) {
             onClick={handleCancelEdit}
             className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-muted transition hover:bg-white/60"
           >
-            Cancel
+            {messages.cancel}
           </button>
         </div>
 
@@ -228,7 +230,7 @@ export function BeanCard({ bean }: BeanCardProps) {
               disabled={isPending}
               className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? "Saving changes..." : "Save changes"}
+              {isPending ? messages.savingChanges : messages.saveChanges}
             </button>
             <button
               type="button"
@@ -236,7 +238,7 @@ export function BeanCard({ bean }: BeanCardProps) {
               disabled={isPending}
               className="inline-flex items-center justify-center rounded-full border border-line px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white/60 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Close
+              {messages.close}
             </button>
           </div>
         </form>
@@ -248,10 +250,10 @@ export function BeanCard({ bean }: BeanCardProps) {
     return (
       <article className="card-surface rounded-[1.75rem] px-5 py-8 text-center">
         <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
-          Bean removed
+          {messages.beanRemoved}
         </p>
         <p className="mt-3 text-sm leading-7 text-muted">
-          {actionMessage ?? "Coffee bean deleted successfully."}
+          {actionMessage ?? messages.deletedMessage}
         </p>
       </article>
     );
@@ -264,7 +266,7 @@ export function BeanCard({ bean }: BeanCardProps) {
           <div className="absolute inset-5">
             <Image
               src={currentBean.imageUrl}
-              alt={`${currentBean.brand} coffee beans`}
+              alt={`${currentBean.brand} ${messages.savedBeans}`}
               fill
               className="object-cover transition duration-500 hover:scale-[1.03]"
               sizes="(max-width: 768px) 70vw, 240px"
@@ -277,7 +279,7 @@ export function BeanCard({ bean }: BeanCardProps) {
           <div>
             <h3 className="display-font text-2xl font-semibold">{currentBean.brand}</h3>
             <p className="mt-1 text-sm text-muted">
-              Added {new Date(currentBean.createdAt).toLocaleDateString()}
+              {messages.addedOn} {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
             </p>
           </div>
           <div className="rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
@@ -287,28 +289,31 @@ export function BeanCard({ bean }: BeanCardProps) {
 
         <dl className="grid grid-cols-3 gap-3 text-sm">
           <div className="rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">Price</dt>
+            <dt className="text-muted">{messages.priceLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
-              {formatCurrency(currentBean.price)}
+              {new Intl.NumberFormat(messages.locale, {
+                style: "currency",
+                currency: "EUR",
+              }).format(currentBean.price)}
             </dd>
           </div>
           <div className="rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">Qty</dt>
+            <dt className="text-muted">{messages.quantityLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {currentBean.quantity}
             </dd>
           </div>
           <div className="rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">Best for</dt>
+            <dt className="text-muted">{messages.bestForLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
-              {currentBean.bestFor}
+              {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
             </dd>
           </div>
         </dl>
 
         <div className="rounded-2xl border border-dashed border-line bg-white/50 p-4">
           <p className="max-h-[8.75rem] overflow-y-auto pr-1 text-sm leading-7 text-muted">
-            {currentBean.comments || "No tasting notes or comments added yet."}
+            {currentBean.comments || messages.noComments}
           </p>
         </div>
 
@@ -331,7 +336,7 @@ export function BeanCard({ bean }: BeanCardProps) {
             disabled={isPending}
             className="inline-flex flex-1 items-center justify-center rounded-full border border-line px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-white/65 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Edit
+            {messages.edit}
           </button>
           <button
             type="button"
@@ -339,7 +344,7 @@ export function BeanCard({ bean }: BeanCardProps) {
             disabled={isPending}
             className="inline-flex flex-1 items-center justify-center rounded-full bg-[#7b2d1d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#622112] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isPending ? "Working..." : "Delete"}
+            {isPending ? messages.working : messages.delete}
           </button>
         </div>
       </div>

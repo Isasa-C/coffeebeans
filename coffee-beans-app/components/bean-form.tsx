@@ -8,12 +8,14 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/language-provider";
 import { initialBeanFormValues } from "@/lib/bean-form";
 import { type BeanFormErrors } from "@/lib/validations/bean";
 import { BeanFormFields } from "./bean-form-fields";
 
 export function BeanForm() {
   const router = useRouter();
+  const { messages } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [formValues, setFormValues] = useState(initialBeanFormValues);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -89,14 +91,14 @@ export function BeanForm() {
 
         if (!response.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          setSubmitError(result.error ?? "Unable to save this bean.");
+          setSubmitError(result.error ?? messages.genericSaveError);
           return;
         }
 
         setFormValues(initialBeanFormValues);
         setImageFile(null);
         setFieldErrors({});
-        setSuccessMessage("Coffee bean saved to your catalog.");
+        setSuccessMessage(messages.beanSaved);
 
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
@@ -104,7 +106,7 @@ export function BeanForm() {
 
         router.refresh();
       } catch {
-        setSubmitError("Network error while saving the bean. Please try again.");
+        setSubmitError(messages.networkSaveError);
       }
     });
   }
@@ -113,10 +115,10 @@ export function BeanForm() {
     <section className="card-surface rounded-[1.75rem] p-5 sm:p-6">
       <div className="mb-6 space-y-2">
         <h2 className="display-font text-3xl font-semibold text-accent">
-          Add a New Bean
+          {messages.addBeanTitle}
         </h2>
         <p className="text-sm leading-7 text-muted">
-          Save a coffee bean with its taste notes and buying details. Adding an image is optional.
+          {messages.addBeanDescription}
         </p>
       </div>
 
@@ -131,7 +133,7 @@ export function BeanForm() {
         />
 
         <p className="text-xs leading-6 text-muted">
-          Optional image: JPG, PNG, or WEBP up to 4.5 MB.
+          {messages.imageHelp}
         </p>
 
         {submitError ? (
@@ -151,7 +153,7 @@ export function BeanForm() {
           disabled={isPending}
           className="inline-flex w-full items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isPending ? "Saving bean..." : "Save bean"}
+          {isPending ? messages.savingBean : messages.saveBean}
         </button>
       </form>
     </section>

@@ -1,6 +1,7 @@
  "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/components/language-provider";
 import { type BeanRecord } from "@/lib/utils";
 import { BeanCard } from "./bean-card";
 import { EmptyState } from "./empty-state";
@@ -10,6 +11,7 @@ type BeanCardGridProps = {
 };
 
 export function BeanCardGrid({ beans }: BeanCardGridProps) {
+  const { messages } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedBestFor, setSelectedBestFor] = useState("all");
 
@@ -38,14 +40,14 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold tracking-[0.22em] text-accent uppercase">
-              Catalog
+              {messages.catalog}
             </p>
             <h2 className="display-font text-3xl font-semibold">
-              Saved beans
+              {messages.savedBeans}
             </h2>
           </div>
           <p className="text-sm text-muted">
-            {filteredBeans.length} {filteredBeans.length === 1 ? "entry" : "entries"} shown
+            {filteredBeans.length} {filteredBeans.length === 1 ? messages.entryShown : messages.entriesShown}
           </p>
         </div>
 
@@ -55,7 +57,7 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               className="mb-2 block text-sm font-semibold text-foreground"
               htmlFor="brandFilter"
             >
-              Filter by brand
+              {messages.filterByBrand}
             </label>
             <select
               id="brandFilter"
@@ -63,7 +65,7 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               value={selectedBrand}
               onChange={(event) => setSelectedBrand(event.target.value)}
             >
-              <option value="all">All brands</option>
+              <option value="all">{messages.allBrands}</option>
               {brandOptions.map((brand) => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -77,7 +79,7 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               className="mb-2 block text-sm font-semibold text-foreground"
               htmlFor="bestForFilter"
             >
-              Filter by best for
+              {messages.filterByBestFor}
             </label>
             <select
               id="bestForFilter"
@@ -85,10 +87,10 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               value={selectedBestFor}
               onChange={(event) => setSelectedBestFor(event.target.value)}
             >
-              <option value="all">All types</option>
+              <option value="all">{messages.allTypes}</option>
               {bestForOptions.map((bestFor) => (
                 <option key={bestFor} value={bestFor}>
-                  {bestFor}
+                  {messages.bestForOptions[bestFor as keyof typeof messages.bestForOptions]}
                 </option>
               ))}
             </select>
@@ -99,10 +101,10 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
       {filteredBeans.length === 0 ? (
         <div className="card-surface rounded-[1.75rem] px-6 py-10 text-center sm:px-10">
           <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
-            No matches
+            {messages.noMatches}
           </p>
           <p className="mt-3 text-sm leading-7 text-muted">
-            Try a different brand or best-for filter to see more beans.
+            {messages.noMatchesDescription}
           </p>
         </div>
       ) : (
