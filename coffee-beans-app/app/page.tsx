@@ -58,19 +58,6 @@ export default async function HomePage() {
         </section>
 
         <section className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold tracking-[0.22em] text-accent uppercase">
-                Catalog
-              </p>
-              <h2 className="display-font text-3xl font-semibold">
-                Saved beans
-              </h2>
-            </div>
-            <p className="text-sm text-muted">
-              {catalog.length} {catalog.length === 1 ? "entry" : "entries"} saved
-            </p>
-          </div>
           <BeanCardGrid beans={catalog} />
         </section>
       </div>

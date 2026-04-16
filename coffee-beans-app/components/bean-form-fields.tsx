@@ -16,7 +16,6 @@ type BeanFormFieldsProps = {
   fieldErrors: BeanFormErrors;
   formValues: BeanFormValues;
   imageInputRef?: RefObject<HTMLInputElement | null>;
-  imageOptionalLabel?: string;
   onChange: (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
@@ -28,7 +27,6 @@ export function BeanFormFields({
   fieldErrors,
   formValues,
   imageInputRef,
-  imageOptionalLabel,
   onChange,
   onImageChange,
   onQuickPickBrand,
@@ -161,7 +159,7 @@ export function BeanFormFields({
 
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="image">
-          Bean Image
+          Bean Image (optional)
         </label>
         <input
           id="image"
@@ -172,9 +170,6 @@ export function BeanFormFields({
           className="field file:mr-4 file:rounded-full file:border-0 file:bg-[rgba(138,75,42,0.12)] file:px-4 file:py-2 file:font-semibold file:text-accent"
           onChange={onImageChange}
         />
-        {imageOptionalLabel ? (
-          <p className="mt-2 text-xs leading-6 text-muted">{imageOptionalLabel}</p>
-        ) : null}
         <FieldError message={fieldErrors.image?.[0]} />
       </div>
     </>

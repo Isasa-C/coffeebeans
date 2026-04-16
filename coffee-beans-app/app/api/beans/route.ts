@@ -6,6 +6,7 @@ import { saveUploadedImage } from "@/lib/uploads";
 import { beanFormSchema } from "@/lib/validations/bean";
 
 export const runtime = "nodejs";
+const DEFAULT_BEAN_IMAGE_URL = "/default-bean.png";
 
 export async function GET() {
   try {
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
 
   try {
     const formData = await request.formData();
-    const image = formData.get("image");
+    const imageEntry = formData.get("image");
+    const image = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
 
     const payload = beanFormSchema.safeParse({
       brand: formData.get("brand"),
@@ -55,8 +57,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const savedImage = await saveUploadedImage(payload.data.image);
-    uploadedFilePath = savedImage.filePath;
+    let imageUrl = DEFAULT_BEAN_IMAGE_URL;
+
+    if (payload.data.image) {
+      const savedImage = await saveUploadedImage(payload.data.image);
+      uploadedFilePath = savedImage.filePath;
+      imageUrl = savedImage.publicUrl;
+    }
 
     const createdBean = await prisma.coffeeBean.create({
       data: {
@@ -66,7 +73,7 @@ export async function POST(request: Request) {
         rating: payload.data.rating,
         bestFor: payload.data.bestFor,
         comments: payload.data.comments || null,
-        imageUrl: savedImage.publicUrl,
+        imageUrl,
       },
     });
 

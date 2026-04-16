@@ -116,7 +116,7 @@ export function BeanForm() {
           Add a New Bean
         </h2>
         <p className="text-sm leading-7 text-muted">
-          Save a coffee bean with its taste notes and buying details.
+          Save a coffee bean with its taste notes and buying details. Adding an image is optional.
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export function BeanForm() {
         />
 
         <p className="text-xs leading-6 text-muted">
-          Supported image formats: JPG, PNG, or WEBP up to 4.5 MB.
+          Optional image: JPG, PNG, or WEBP up to 4.5 MB.
         </p>
 
         {submitError ? (

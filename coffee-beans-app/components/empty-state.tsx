@@ -8,7 +8,7 @@ export function EmptyState() {
         Your first roast can go here.
       </h3>
       <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted sm:text-base">
-        Upload a coffee bean image and add the essentials to start building a polished catalog.
+        Add your coffee details to start building a polished catalog. Images are optional.
       </p>
     </div>
   );

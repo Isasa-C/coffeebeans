@@ -150,6 +150,14 @@ export function BeanCard({ bean }: BeanCardProps) {
     setActionError(null);
     setActionMessage(null);
 
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this coffee bean?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     startTransition(async () => {
       try {
         const response = await fetch(`/api/beans/${bean.id}`, {
@@ -203,7 +211,6 @@ export function BeanCard({ bean }: BeanCardProps) {
             fieldErrors={fieldErrors}
             formValues={formValues}
             imageInputRef={imageInputRef}
-            imageOptionalLabel="Leave this empty to keep the current bean photo."
             onChange={handleChange}
             onImageChange={handleImageChange}
             onQuickPickBrand={handleQuickPickBrand}
@@ -251,17 +258,21 @@ export function BeanCard({ bean }: BeanCardProps) {
   }
 
   return (
-    <article className="card-surface overflow-hidden rounded-[1.75rem]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#e7d6c4]">
-        <Image
-          src={currentBean.imageUrl}
-          alt={`${currentBean.brand} coffee beans`}
-          fill
-          className="object-cover transition duration-500 hover:scale-[1.03]"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+    <article className="card-surface flex h-full flex-col overflow-hidden rounded-[1.75rem]">
+      <div className="bg-[#f1e4d3] p-4">
+        <div className="relative mx-auto aspect-square max-w-[240px] overflow-hidden rounded-[1.25rem] border border-line bg-[#e7d6c4]">
+          <div className="absolute inset-5">
+            <Image
+              src={currentBean.imageUrl}
+              alt={`${currentBean.brand} coffee beans`}
+              fill
+              className="object-cover transition duration-500 hover:scale-[1.03]"
+              sizes="(max-width: 768px) 70vw, 240px"
+            />
+          </div>
+        </div>
       </div>
-      <div className="space-y-5 p-5">
+      <div className="flex flex-1 flex-col space-y-5 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="display-font text-2xl font-semibold">{currentBean.brand}</h3>
@@ -274,20 +285,20 @@ export function BeanCard({ bean }: BeanCardProps) {
           </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-2xl border border-line bg-white/65 p-3">
+        <dl className="grid grid-cols-3 gap-3 text-sm">
+          <div className="rounded-2xl border border-line bg-card p-3">
             <dt className="text-muted">Price</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {formatCurrency(currentBean.price)}
             </dd>
           </div>
-          <div className="rounded-2xl border border-line bg-white/65 p-3">
+          <div className="rounded-2xl border border-line bg-card p-3">
             <dt className="text-muted">Qty</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {currentBean.quantity}
             </dd>
           </div>
-          <div className="rounded-2xl border border-line bg-white/65 p-3">
+          <div className="rounded-2xl border border-line bg-card p-3">
             <dt className="text-muted">Best for</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {currentBean.bestFor}
@@ -296,7 +307,7 @@ export function BeanCard({ bean }: BeanCardProps) {
         </dl>
 
         <div className="rounded-2xl border border-dashed border-line bg-white/50 p-4">
-          <p className="text-sm leading-7 text-muted">
+          <p className="max-h-[8.75rem] overflow-y-auto pr-1 text-sm leading-7 text-muted">
             {currentBean.comments || "No tasting notes or comments added yet."}
           </p>
         </div>
@@ -313,7 +324,7 @@ export function BeanCard({ bean }: BeanCardProps) {
           </div>
         ) : null}
 
-        <div className="flex gap-3">
+        <div className="mt-auto flex gap-3">
           <button
             type="button"
             onClick={handleStartEdit}

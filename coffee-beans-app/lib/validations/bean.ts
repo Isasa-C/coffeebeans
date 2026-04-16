@@ -38,7 +38,7 @@ const baseBeanSchema = z.object({
 
 const uploadedImageSchema = z.custom<File>(
   (value) => value instanceof File && value.size > 0,
-  "Please upload a bean image.",
+  "Please choose a valid bean image.",
 ).superRefine((file, ctx) => {
   if (file.size > MAX_FILE_SIZE) {
     ctx.addIssue({
@@ -56,7 +56,7 @@ const uploadedImageSchema = z.custom<File>(
 });
 
 export const beanFormSchema = baseBeanSchema.extend({
-  image: uploadedImageSchema,
+  image: z.union([uploadedImageSchema, z.null(), z.undefined()]),
 });
 
 export const beanUpdateSchema = baseBeanSchema.extend({
