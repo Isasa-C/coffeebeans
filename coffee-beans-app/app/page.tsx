@@ -4,16 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { formatBeanRecord } from "@/lib/utils";
 import Image from "next/image";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const beans = await prisma.coffeeBean.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  let catalog: ReturnType<typeof formatBeanRecord>[] = [];
 
-  const catalog = beans.map(formatBeanRecord);
+  try {
+    const beans = await prisma.coffeeBean.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    catalog = beans.map(formatBeanRecord);
+  } catch (error) {
+    console.error("Failed to load coffee beans on the home page", error);
+  }
 
   return (
     <main className="grain min-h-screen py-8 sm:py-12">

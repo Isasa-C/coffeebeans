@@ -3,14 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model CoffeeBean {
   id        String   @id @default(cuid())
   brand     String
-  location  String
   price     Float
   quantity  Int
   rating    Float

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = Math.floor(4.5 * 1024 * 1024);
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const bestForOptions = ["Latte", "Espresso", "Americano"] as const;
 
@@ -43,7 +43,7 @@ const uploadedImageSchema = z.custom<File>(
   if (file.size > MAX_FILE_SIZE) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Image must be 5 MB or smaller.",
+      message: "Image must be 4.5 MB or smaller.",
     });
   }
 
