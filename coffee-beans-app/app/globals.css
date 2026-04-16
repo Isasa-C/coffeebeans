@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5efe5;
+  --foreground: #2f241c;
+  --surface: rgba(255, 250, 243, 0.9);
+  --surface-strong: #fffaf3;
+  --line: rgba(97, 68, 44, 0.16);
+  --accent: #8a4b2a;
+  --accent-strong: #6f3519;
+  --muted: #6e5a49;
+  --shadow: 0 24px 80px rgba(76, 44, 23, 0.12);
+  --font-body:
+    "Avenir Next", "Segoe UI", "Helvetica Neue", "Nimbus Sans", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+  background-image:
+    radial-gradient(circle at top left, rgba(201, 147, 95, 0.28), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(140, 78, 42, 0.18), transparent 28%),
+    linear-gradient(180deg, #fbf6ef 0%, #f3eadf 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(138, 75, 42, 0.18);
+}
+
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%);
+  background-size: 24px 24px;
+  opacity: 0.2;
+}
+
+.card-surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(97, 68, 44, 0.18);
+  background: rgba(255, 252, 248, 0.92);
+  padding: 0.9rem 1rem;
+  color: var(--foreground);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.field:focus {
+  border-color: rgba(138, 75, 42, 0.85);
+  box-shadow: 0 0 0 4px rgba(138, 75, 42, 0.12);
+}
+
+.field::placeholder {
+  color: rgba(110, 90, 73, 0.72);
+}
+
+.page-shell {
+  width: min(1180px, calc(100vw - 2rem));
+  margin: 0 auto;
+}
+
+.display-font {
+  font-family: var(--font-body), sans-serif;
+}
+
+.animate-rise {
+  animation: rise 500ms ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
