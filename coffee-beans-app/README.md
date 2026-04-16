@@ -30,7 +30,13 @@ cp .env.example .env
 npx prisma generate
 ```
 
-4. Start the app:
+4. Push the schema to your database:
+
+```bash
+npx prisma db push
+```
+
+5. Start the app:
 
 ```bash
 npm run dev
@@ -56,7 +62,7 @@ This project is prepared for GitHub + Vercel, but production requires two servic
 
 - In production, uploaded images are stored in Vercel Blob.
 - Without `BLOB_READ_WRITE_TOKEN`, uploads fall back to local `public/uploads` storage for development only.
-- Local SQLite files are intentionally ignored and are not used for Vercel production.
+- This project is configured for a hosted Postgres database such as Neon.
 
 ## Verification
 
