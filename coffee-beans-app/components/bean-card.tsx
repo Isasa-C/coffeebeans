@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   ChangeEvent,
   FormEvent,
@@ -281,13 +280,15 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
       <div className="bg-[#f1e4d3] p-4">
         <div className="relative mx-auto aspect-square max-w-[240px] overflow-hidden rounded-[1.25rem] border border-line bg-[#e7d6c4]">
           <div className="absolute inset-5">
-            <Image
-              src={currentBean.imageUrl}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${currentBean.imageUrl}${currentBean.imageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(currentBean.updatedAt)}`}
               alt={`${currentBean.brand} ${messages.savedBeans}`}
-              fill
-              unoptimized
-              className="object-cover transition duration-500 hover:scale-[1.03]"
-              sizes="(max-width: 768px) 70vw, 240px"
+              className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+              loading="lazy"
+              onError={(event) => {
+                event.currentTarget.src = "/default-bean.png";
+              }}
             />
           </div>
         </div>
