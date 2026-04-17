@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { BeanCardGrid } from "@/components/bean-card-grid";
 import { BeanForm } from "@/components/bean-form";
 import {
@@ -30,6 +31,15 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
     <main className="grain min-h-screen py-8 sm:py-12">
       <div className="page-shell animate-rise space-y-8">
         <div className="card-surface flex flex-col gap-4 rounded-[1.75rem] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/coffee-shop-prices"
+              className="rounded-full border border-[rgba(97,68,44,0.16)] bg-[rgba(138,75,42,0.1)] px-4 py-2 text-sm font-semibold text-accent transition hover:bg-[rgba(138,75,42,0.16)]"
+            >
+              Coffee Shop Prices
+            </Link>
+          </div>
+
           <nav aria-label="Primary" className="flex flex-wrap gap-2">
             {navItems.map((item) => (
               <a
