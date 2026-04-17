@@ -285,6 +285,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
               src={currentBean.imageUrl}
               alt={`${currentBean.brand} ${messages.savedBeans}`}
               fill
+              unoptimized
               className="object-cover transition duration-500 hover:scale-[1.03]"
               sizes="(max-width: 768px) 70vw, 240px"
             />
