@@ -8,6 +8,7 @@ import {
   CoffeeGuideSection,
 } from "@/components/coffee-guide-section";
 import { LanguageProvider, useLanguage } from "@/components/language-provider";
+import { ScrollToTopButton } from "@/components/scroll-to-top-button";
 import { type BeanRecord } from "@/lib/utils";
 
 export function HomeContent({ catalog }: { catalog: BeanRecord[] }) {
@@ -22,9 +23,9 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
   const { language, setLanguage, messages, languageOptions } = useLanguage();
   const navItems = [
     { href: "#home", label: messages.navHome },
+    { href: "#add-bean", label: messages.navAddBean },
     { href: "#my-beans", label: messages.navMyBeans },
     { href: "#coffee-guide", label: messages.navCoffeeGuide },
-    { href: "#add-bean", label: messages.navAddBean },
   ];
 
   return (
@@ -36,7 +37,7 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
               href="/coffee-shop-prices"
               className="rounded-full border border-[rgba(97,68,44,0.16)] bg-[rgba(138,75,42,0.1)] px-4 py-2 text-sm font-semibold text-accent transition hover:bg-[rgba(138,75,42,0.16)]"
             >
-              Coffee Shop Prices
+              {messages.coffeePrices.title}
             </Link>
           </div>
 
@@ -114,6 +115,7 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
         </section>
         <CoffeeGuideSection />
       </div>
+      <ScrollToTopButton />
     </main>
   );
 }

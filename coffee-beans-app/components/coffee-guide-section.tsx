@@ -393,18 +393,10 @@ export function CoffeeGuideSection() {
       id="coffee-guide"
     >
       <div className="max-w-3xl">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border-[0.5px] border-[rgba(47,36,28,0.12)] bg-[#faf7f2] text-lg">
-            ☕
-          </span>
-          <div>
-            <h1 className="text-3xl font-semibold text-[#2f241c] sm:text-4xl">
-              {copy.heroTitle}
-            </h1>
-            <p className="mt-1 text-sm leading-7 text-[#6e5a49]">
-              {copy.heroSubtitle}
-            </p>
-          </div>
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold text-[#2f241c] sm:text-4xl">
+            {copy.heroTitle}
+          </h1>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -431,10 +423,7 @@ export function CoffeeGuideSection() {
 
       <div className="mt-8">
         <div className={activeTab === "roasts" ? "block" : "hidden"}>
-          <p className="text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
-            {copy.roastsSectionLabel}
-          </p>
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             {copy.roastCards.map((roast) => (
               <article
                 key={roast.name}
@@ -455,10 +444,7 @@ export function CoffeeGuideSection() {
         </div>
 
         <div className={activeTab === "drinks" ? "block" : "hidden"}>
-          <p className="text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
-            {copy.drinksSectionLabel}
-          </p>
-          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
             <div>
               <p className="mb-2 text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
                 {copy.espressoGroupLabel}
