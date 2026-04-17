@@ -286,9 +286,6 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
               alt={`${currentBean.brand} ${messages.savedBeans}`}
               className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
               loading="lazy"
-              onError={(event) => {
-                event.currentTarget.src = "/default-bean.png";
-              }}
             />
           </div>
         </div>
