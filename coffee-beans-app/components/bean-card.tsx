@@ -282,7 +282,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
           <div className="absolute inset-5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`${currentBean.imageUrl}${currentBean.imageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(currentBean.updatedAt)}`}
+              src={currentBean.imageUrl}
               alt={`${currentBean.brand} ${messages.savedBeans}`}
               className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
               loading="lazy"
