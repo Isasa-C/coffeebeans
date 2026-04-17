@@ -126,7 +126,7 @@ export function BeanFormFields({
 
       <div>
         <label className="mb-2 block text-sm font-semibold" htmlFor="bestFor">
-          {messages.bestFor}
+          {messages.roastLabel}
         </label>
         <select
           id="bestFor"
@@ -141,6 +141,9 @@ export function BeanFormFields({
             </option>
           ))}
         </select>
+        <p className="mt-2 text-xs leading-6 text-muted">
+          {messages.roastHelper}
+        </p>
         <FieldError message={fieldErrors.bestFor?.[0]} />
       </div>
 

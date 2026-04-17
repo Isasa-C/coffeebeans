@@ -2,7 +2,13 @@ import { z } from "zod";
 
 const MAX_FILE_SIZE = Math.floor(4.5 * 1024 * 1024);
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-export const bestForOptions = ["Latte", "Espresso", "Americano"] as const;
+export const bestForOptions = [
+  "Light",
+  "Medium-Light",
+  "Medium",
+  "Medium-Dark",
+  "Dark",
+] as const;
 
 const baseBeanSchema = z.object({
   brand: z
@@ -30,7 +36,7 @@ const baseBeanSchema = z.object({
     .max(5, "Rating must be 5 or lower."),
   bestFor: z.enum(bestForOptions, {
     errorMap: () => ({
-      message: "Choose whether this bean is best for Latte, Espresso, or Americano.",
+      message: "Choose a roast type from Light to Dark.",
     }),
   }),
   comments: z

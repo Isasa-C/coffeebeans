@@ -23,6 +23,39 @@ type BeanCardProps = {
   };
 };
 
+const roastDrinkMatches: Record<
+  string,
+  Array<{ name: string; recipe: string }>
+> = {
+  Light: [
+    { name: "Pour-over", recipe: "15g coffee + 250ml water" },
+    { name: "Cold brew", recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)" },
+    { name: "Orange / coconut coffee", recipe: "36g espresso + 100-150ml juice or coconut water" },
+  ],
+  "Medium-Light": [
+    { name: "Pour-over", recipe: "15g coffee + 250ml water" },
+    { name: "Cold brew", recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)" },
+    { name: "Orange / coconut coffee", recipe: "36g espresso + 100-150ml juice or coconut water" },
+  ],
+  Medium: [
+    { name: "Dirty", recipe: "36g espresso + 150-200ml cold milk" },
+    { name: "Americano", recipe: "36g espresso + 150-250ml water" },
+    { name: "Latte", recipe: "36g espresso + 180-240ml milk" },
+    { name: "Flat white", recipe: "36g espresso + 120-160ml milk" },
+  ],
+  "Medium-Dark": [
+    { name: "Latte", recipe: "36g espresso + 180-240ml milk" },
+    { name: "Flat white", recipe: "36g espresso + 120-160ml milk" },
+    { name: "Cappuccino", recipe: "36g espresso + 120-150ml milk (thick foam)" },
+    { name: "Vanilla / hazelnut / mocha", recipe: "36g espresso + milk + 10-20g syrup" },
+    { name: "Espresso", recipe: "36g espresso" },
+  ],
+  Dark: [
+    { name: "Americano", recipe: "36g espresso + 150-250ml water" },
+    { name: "Espresso", recipe: "36g espresso" },
+  ],
+};
+
 export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const router = useRouter();
   const { messages } = useLanguage();
@@ -41,6 +74,8 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const priceDifference = currentBean.price - priceStats.average;
   const safeWeight = currentBean.weight > 0 ? currentBean.weight : 250;
   const unitPrice = currentBean.price / safeWeight;
+  const roastMatches =
+    roastDrinkMatches[currentBean.bestFor] ?? roastDrinkMatches.Medium;
   const priceTrendLabel =
     Math.abs(priceDifference) < 0.5
       ? messages.priceTrendAverage
@@ -320,7 +355,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
             </dd>
           </div>
           <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">{messages.bestForLabel}</dt>
+            <dt className="text-muted">{messages.roastLabel}</dt>
             <dd className="mt-1 text-base font-semibold text-foreground">
               {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
             </dd>
@@ -357,6 +392,23 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
           <div className="mt-2 flex items-center justify-between text-xs text-muted">
             <span>{messages.priceTrendLow}</span>
             <span>{messages.priceTrendHigh}</span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-card p-4">
+          <p className="text-sm font-semibold text-foreground">
+            {messages.recommendedLabel}
+          </p>
+          <div className="mt-4 space-y-3">
+            {roastMatches.map((drink) => (
+              <div
+                key={`${currentBean.id}-${drink.name}`}
+                className="rounded-2xl border border-dashed border-line bg-white/55 px-4 py-3"
+              >
+                <p className="text-sm font-semibold text-foreground">{drink.name}</p>
+                <p className="mt-1 text-sm leading-6 text-muted">{drink.recipe}</p>
+              </div>
+            ))}
           </div>
         </div>
 

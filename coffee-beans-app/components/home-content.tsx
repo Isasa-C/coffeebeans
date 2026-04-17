@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { BeanCardGrid } from "@/components/bean-card-grid";
 import { BeanForm } from "@/components/bean-form";
+import {
+  CoffeeGuideSection,
+} from "@/components/coffee-guide-section";
 import { LanguageProvider, useLanguage } from "@/components/language-provider";
 import { type BeanRecord } from "@/lib/utils";
 
@@ -16,11 +19,29 @@ export function HomeContent({ catalog }: { catalog: BeanRecord[] }) {
 
 function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
   const { language, setLanguage, messages, languageOptions } = useLanguage();
+  const navItems = [
+    { href: "#home", label: messages.navHome },
+    { href: "#my-beans", label: messages.navMyBeans },
+    { href: "#coffee-guide", label: messages.navCoffeeGuide },
+    { href: "#add-bean", label: messages.navAddBean },
+  ];
 
   return (
     <main className="grain min-h-screen py-8 sm:py-12">
       <div className="page-shell animate-rise space-y-8">
-        <div className="flex justify-end">
+        <div className="card-surface flex flex-col gap-4 rounded-[1.75rem] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <nav aria-label="Primary" className="flex flex-wrap gap-2">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-full border border-line bg-white/55 px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-white/80 hover:text-accent"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
           <div className="rounded-full border border-line bg-card/85 px-3 py-2">
             <label className="mr-2 text-sm font-semibold text-foreground" htmlFor="languageSwitcher">
               {messages.languageLabel}
@@ -40,7 +61,10 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
           </div>
         </div>
 
-        <section className="card-surface relative overflow-hidden rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10">
+        <section
+          className="card-surface relative scroll-mt-24 overflow-hidden rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10"
+          id="home"
+        >
           <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-[#d89a6e]/25 via-transparent to-[#8f5734]/15" />
           <div className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div className="space-y-6 pt-4 sm:pt-6 lg:pt-10">
@@ -69,13 +93,16 @@ function HomeContentInner({ catalog }: { catalog: BeanRecord[] }) {
                 </div>
               </div>
             </div>
-            <BeanForm />
+            <div id="add-bean">
+              <BeanForm />
+            </div>
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="scroll-mt-24 space-y-4" id="my-beans">
           <BeanCardGrid beans={catalog} />
         </section>
+        <CoffeeGuideSection />
       </div>
     </main>
   );

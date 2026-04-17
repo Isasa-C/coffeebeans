@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useState } from "react";
 import { useLanguage } from "@/components/language-provider";
@@ -15,22 +15,22 @@ type SortOption = "newest" | "oldest" | "priceHigh" | "priceLow";
 export function BeanCardGrid({ beans }: BeanCardGridProps) {
   const { messages } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState("all");
-  const [selectedBestFor, setSelectedBestFor] = useState("all");
+  const [selectedRoast, setSelectedRoast] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const brandOptions = Array.from(new Set(beans.map((bean) => bean.brand))).sort(
     (left, right) => left.localeCompare(right),
   );
-  const bestForOptions = Array.from(
+  const roastOptions = Array.from(
     new Set(beans.map((bean) => bean.bestFor)),
   ).sort((left, right) => left.localeCompare(right));
   const filteredBeans = beans.filter((bean) => {
     const matchesBrand =
       selectedBrand === "all" || bean.brand === selectedBrand;
-    const matchesBestFor =
-      selectedBestFor === "all" || bean.bestFor === selectedBestFor;
+    const matchesRoast =
+      selectedRoast === "all" || bean.bestFor === selectedRoast;
 
-    return matchesBrand && matchesBestFor;
+    return matchesBrand && matchesRoast;
   });
   const sortedBeans = [...filteredBeans].sort((left, right) => {
     if (sortBy === "oldest") {
@@ -70,6 +70,9 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
             <h2 className="display-font text-3xl font-semibold">
               {messages.savedBeans}
             </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
+              {messages.catalogDescription}
+            </p>
           </div>
           <p className="text-sm text-muted">
             {filteredBeans.length} {filteredBeans.length === 1 ? messages.entryShown : messages.entriesShown}
@@ -102,20 +105,20 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
           <div>
             <label
               className="mb-2 block text-sm font-semibold text-foreground"
-              htmlFor="bestForFilter"
+              htmlFor="roastFilter"
             >
-              {messages.filterByBestFor}
+              {messages.filterByRoast}
             </label>
             <select
-              id="bestForFilter"
+              id="roastFilter"
               className="field appearance-none"
-              value={selectedBestFor}
-              onChange={(event) => setSelectedBestFor(event.target.value)}
+              value={selectedRoast}
+              onChange={(event) => setSelectedRoast(event.target.value)}
             >
-              <option value="all">{messages.allTypes}</option>
-              {bestForOptions.map((bestFor) => (
-                <option key={bestFor} value={bestFor}>
-                  {messages.bestForOptions[bestFor as keyof typeof messages.bestForOptions]}
+              <option value="all">{messages.allRoasts}</option>
+              {roastOptions.map((roast) => (
+                <option key={roast} value={roast}>
+                  {messages.bestForOptions[roast as keyof typeof messages.bestForOptions] ?? roast}
                 </option>
               ))}
             </select>
