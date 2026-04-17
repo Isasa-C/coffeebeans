@@ -35,6 +35,21 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 const formatCurrency = (value: number) => currencyFormatter.format(value);
 const DEFAULT_DATE_FROM = "2026-04-17";
 
+function formatTooltipCurrency(
+  value: number | string | readonly (number | string)[] | undefined,
+  label: string,
+) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const numericValue =
+    typeof rawValue === "number"
+      ? rawValue
+      : typeof rawValue === "string"
+        ? Number(rawValue)
+        : NaN;
+
+  return [Number.isFinite(numericValue) ? formatCurrency(numericValue) : "—", label] as const;
+}
+
 function getTodayDateString() {
   const now = new Date();
   const year = now.getFullYear();
@@ -329,7 +344,7 @@ export function CoffeeShopPricesPage() {
                             boxShadow: "0 20px 40px rgba(76,44,23,0.08)",
                           }}
                           labelStyle={{ color: "#5f4b3d", fontWeight: 600 }}
-                          formatter={(value: number) => [formatCurrency(value), "Final price"]}
+                          formatter={(value) => formatTooltipCurrency(value, "Final price")}
                         />
                         <Line
                           type="monotone"
@@ -387,7 +402,7 @@ export function CoffeeShopPricesPage() {
                               boxShadow: "0 20px 40px rgba(76,44,23,0.08)",
                             }}
                             labelStyle={{ color: "#5f4b3d", fontWeight: 600 }}
-                            formatter={(value: number) => [formatCurrency(value), "Latest price"]}
+                            formatter={(value) => formatTooltipCurrency(value, "Latest price")}
                           />
                           <Bar dataKey="price" radius={[12, 12, 0, 0]} fill="#b67b52" />
                         </BarChart>
