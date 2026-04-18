@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CartesianGrid,
@@ -12,11 +12,9 @@ import {
   YAxis,
 } from "recharts";
 import { AddCoffeeShopOrderForm } from "@/components/add-coffee-shop-order-form";
-import { CoffeeShopPriceFilterBar } from "@/components/coffee-shop-price-filter-bar";
 import { useLanguage } from "@/components/language-provider";
 import { ScrollToTopButton } from "@/components/scroll-to-top-button";
 import {
-  coffeeShopBrands,
   coffeeShopPriceData,
   type CoffeeShopPriceEntry,
 } from "@/lib/coffee-shop-prices";
@@ -25,9 +23,58 @@ type DrinkType = CoffeeShopPriceEntry["drinkType"];
 type Temperature = CoffeeShopPriceEntry["temperature"];
 type MilkType = CoffeeShopPriceEntry["milkType"];
 type Size = CoffeeShopPriceEntry["size"];
-type ActiveView = "add-order" | "price-trend" | "order-history";
+type ActiveView = "add-order" | "price-trend" | "brand-comparison" | "order-history";
 const ALL_BRANDS = "__all__";
 const DEFAULT_DATE_FROM = "2026-04-17";
+const COFFEE_PRICE_STORAGE_KEY = "coffee-shop-orders";
+const LEGACY_COFFEE_PRICE_STORAGE_KEY = "coffee-shop-price-entries";
+
+function isCoffeeShopPriceEntry(value: unknown): value is CoffeeShopPriceEntry {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const entry = value as Record<string, unknown>;
+
+  return (
+    typeof entry.id === "string" &&
+    typeof entry.brand === "string" &&
+    (entry.drinkType === "Latte" || entry.drinkType === "Americano") &&
+    (entry.temperature === "Hot" || entry.temperature === "Iced") &&
+    (entry.milkType === "Normal" || entry.milkType === "Oat" || entry.milkType === "None") &&
+    (entry.size === "Small" || entry.size === "Standard" || entry.size === "Large") &&
+    typeof entry.finalPrice === "number" &&
+    typeof entry.oatMilkExtra === "number" &&
+    typeof entry.date === "string" &&
+    (typeof entry.notes === "string" || typeof entry.notes === "undefined")
+  );
+}
+
+function getStoredCoffeeShopPriceEntries() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue =
+      window.localStorage.getItem(COFFEE_PRICE_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_COFFEE_PRICE_STORAGE_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as unknown;
+
+    if (!Array.isArray(parsedValue) || !parsedValue.every(isCoffeeShopPriceEntry)) {
+      return null;
+    }
+
+    return parsedValue;
+  } catch {
+    return null;
+  }
+}
 
 function formatTooltipCurrency(
   value: number | string | readonly (number | string)[] | undefined,
@@ -102,11 +149,22 @@ export function CoffeeShopPricesPage() {
   const heroLinks = [
     { key: "add-order" as const, title: copy.tabAddCoffee },
     { key: "price-trend" as const, title: copy.tabPriceTrend },
+    { key: "brand-comparison" as const, title: copy.brandComparisonTitle },
     { key: "order-history" as const, title: copy.tabOrderHistory },
   ] as const;
 
   const [entries, setEntries] = useState<CoffeeShopPriceEntry[]>(coffeeShopPriceData);
-  const [selectedBrand, setSelectedBrand] = useState<string>(coffeeShopBrands[0] ?? ALL_BRANDS);
+  const [hasLoadedStoredEntries, setHasLoadedStoredEntries] = useState(false);
+  const brands = useMemo(
+    () =>
+      Array.from(new Set(entries.map((entry) => entry.brand))).sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    [entries],
+  );
+  const [selectedBrand, setSelectedBrand] = useState<string>(
+    coffeeShopPriceData[0]?.brand ?? ALL_BRANDS,
+  );
   const [drinkType, setDrinkType] = useState<DrinkType>("Latte");
   const [temperature, setTemperature] = useState<Temperature>("Iced");
   const [milkType, setMilkType] = useState<MilkType>("Oat");
@@ -114,86 +172,133 @@ export function CoffeeShopPricesPage() {
   const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM);
   const [dateTo, setDateTo] = useState(defaultDateTo);
   const [activeView, setActiveView] = useState<ActiveView>("add-order");
+  const activeBrand =
+    selectedBrand === ALL_BRANDS || brands.includes(selectedBrand)
+      ? selectedBrand
+      : (brands[0] ?? ALL_BRANDS);
+
+  // Price trend filters (multiple brands and drink types)
+  const [trendBrands, setTrendBrands] = useState<string[]>([]);
+  const [trendDrinkTypes, setTrendDrinkTypes] = useState<DrinkType[]>(["Latte"]);
+  const [trendDateFrom, setTrendDateFrom] = useState(DEFAULT_DATE_FROM);
+  const [trendDateTo, setTrendDateTo] = useState(defaultDateTo);
+
+  // Brand comparison filters
+  const [comparisonDrinkType, setComparisonDrinkType] = useState<DrinkType>("Latte");
+  const [comparisonBrands, setComparisonBrands] = useState<string[]>([]);
+  const [comparisonDateFrom, setComparisonDateFrom] = useState("2025-01-01");
+  const [comparisonDateTo, setComparisonDateTo] = useState("2025-12-31");
 
   const normalizedMilkType: MilkType = drinkType === "Americano" ? "None" : milkType;
 
-  const filteredEntries = useMemo(() => {
+  const trendFilteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      const matchesBrand = selectedBrand === ALL_BRANDS || entry.brand === selectedBrand;
-      const matchesDrinkType = entry.drinkType === drinkType;
-      const matchesTemperature = entry.temperature === temperature;
-      const matchesMilk = entry.milkType === normalizedMilkType;
-      const matchesSize = entry.size === size;
-      const matchesFrom = !dateFrom || entry.date >= dateFrom;
-      const matchesTo = !dateTo || entry.date <= dateTo;
+      const matchesBrand = trendBrands.length === 0 || trendBrands.includes(entry.brand);
+      const matchesDrinkType = trendDrinkTypes.length === 0 || trendDrinkTypes.includes(entry.drinkType);
+      const matchesFrom = !trendDateFrom || entry.date >= trendDateFrom;
+      const matchesTo = !trendDateTo || entry.date <= trendDateTo;
 
-      return (
-        matchesBrand &&
-        matchesDrinkType &&
-        matchesTemperature &&
-        matchesMilk &&
-        matchesSize &&
-        matchesFrom &&
-        matchesTo
-      );
+      return matchesBrand && matchesDrinkType && matchesFrom && matchesTo;
     });
-  }, [dateFrom, dateTo, drinkType, entries, normalizedMilkType, selectedBrand, size, temperature]);
+  }, [entries, trendBrands, trendDrinkTypes, trendDateFrom, trendDateTo]);
 
-  const trendEntries = useMemo(() => {
-    if (selectedBrand === ALL_BRANDS) {
-      return [];
-    }
+  const trendBrandsWithData = useMemo(
+    () => Array.from(new Set(trendFilteredEntries.map((entry) => entry.brand))),
+    [trendFilteredEntries],
+  );
 
-    return [...filteredEntries].sort((left, right) => left.date.localeCompare(right.date));
-  }, [filteredEntries, selectedBrand]);
+  const trendData = useMemo(() => {
+    if (trendBrandsWithData.length === 0) return [];
 
-  const trendData = trendEntries.map((entry) => ({
-    date: formatDate(entry.date, messages.locale),
-    price: entry.finalPrice,
-  }));
+    const dates = Array.from(new Set(trendFilteredEntries.map((entry) => entry.date))).sort();
 
-  const firstPrice = trendEntries[0]?.finalPrice ?? null;
-  const latestPrice = trendEntries.at(-1)?.finalPrice ?? null;
+    return dates.map((date) => {
+      const obj: Record<string, string | number | null> = { date: formatDate(date, messages.locale) };
+      for (const brand of trendBrandsWithData) {
+        const entry = trendFilteredEntries.find(
+          (e) => e.date === date && e.brand === brand,
+        );
+        obj[brand] = entry ? entry.finalPrice : null;
+      }
+      return obj;
+    });
+  }, [trendFilteredEntries, trendBrandsWithData, messages.locale]);
+
+  // Calculate summary stats for trend (only when single brand is selected)
+  const firstPrice = trendBrandsWithData.length === 1 ? trendFilteredEntries.filter(e => e.brand === trendBrandsWithData[0]).sort((a, b) => a.date.localeCompare(b.date))[0]?.finalPrice ?? null : null;
+  const latestPrice = trendBrandsWithData.length === 1 ? trendFilteredEntries.filter(e => e.brand === trendBrandsWithData[0]).sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.finalPrice ?? null : null;
   const changeAmount =
     firstPrice !== null && latestPrice !== null ? latestPrice - firstPrice : null;
 
-  const recentEntries = [...filteredEntries]
-    .sort((left, right) => right.date.localeCompare(left.date))
-    .slice(0, 8);
-  const totalMatchingEntries = filteredEntries.length;
-  const selectedCoffeeLabel =
-    selectedBrand === ALL_BRANDS
-      ? drinkType === "Americano"
-        ? `${labelBySize[size]} ${labelByTemperature[temperature]} ${labelByDrinkType[drinkType]} — ${copy.allBrands}`
-        : `${labelBySize[size]} ${labelByTemperature[temperature]} ${labelByMilkType[normalizedMilkType]} ${labelByDrinkType[drinkType]} — ${copy.allBrands}`
-      : drinkType === "Americano"
-        ? `${labelBySize[size]} ${labelByTemperature[temperature]} ${labelByDrinkType[drinkType]} — ${selectedBrand}`
-        : `${labelBySize[size]} ${labelByTemperature[temperature]} ${labelByMilkType[normalizedMilkType]} ${labelByDrinkType[drinkType]} — ${selectedBrand}`;
+  // Brand comparison data with separate filters
+  const comparisonFilteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      const matchesDrinkType = entry.drinkType === comparisonDrinkType;
+      const matchesBrand = comparisonBrands.length === 0 || comparisonBrands.includes(entry.brand);
+      const matchesFrom = !comparisonDateFrom || entry.date >= comparisonDateFrom;
+      const matchesTo = !comparisonDateTo || entry.date <= comparisonDateTo;
 
-  function resetFilters() {
-    setSelectedBrand(coffeeShopBrands[0] ?? ALL_BRANDS);
-    setDrinkType("Latte");
-    setTemperature("Iced");
-    setMilkType("Oat");
-    setSize("Standard");
-    setDateFrom(DEFAULT_DATE_FROM);
-    setDateTo(getTodayDateString());
-  }
+      return matchesDrinkType && matchesBrand && matchesFrom && matchesTo;
+    });
+  }, [entries, comparisonDrinkType, comparisonBrands, comparisonDateFrom, comparisonDateTo]);
 
-  function handleDrinkTypeChange(nextDrinkType: DrinkType) {
-    setDrinkType(nextDrinkType);
+  const comparisonBrandsWithData = useMemo(
+    () => Array.from(new Set(comparisonFilteredEntries.map((entry) => entry.brand))),
+    [comparisonFilteredEntries],
+  );
 
-    if (nextDrinkType === "Americano") {
-      setTemperature("Iced");
-      setSize("Standard");
-      setMilkType("None");
+  const comparisonData = useMemo(() => {
+    if (comparisonBrandsWithData.length < 2) return [];
+
+    const dates = Array.from(new Set(comparisonFilteredEntries.map((entry) => entry.date))).sort();
+
+    return dates.map((date) => {
+      const obj: Record<string, string | number | null> = { date: formatDate(date, messages.locale) };
+      for (const brand of comparisonBrandsWithData) {
+        const entry = comparisonFilteredEntries.find(
+          (e) => e.date === date && e.brand === brand,
+        );
+        obj[brand] = entry ? entry.finalPrice : null;
+      }
+      return obj;
+    });
+  }, [comparisonFilteredEntries, comparisonBrandsWithData, messages.locale]);
+
+  const orderHistoryEntries = [...entries].sort((left, right) => right.date.localeCompare(left.date));
+
+  // Trend section labels and counts
+  const trendTotalMatchingEntries = trendFilteredEntries.length;
+  const trendSelectedLabel = trendBrands.length === 0 && trendDrinkTypes.length === 0
+    ? "All data"
+    : trendBrands.length === 0
+      ? `${trendDrinkTypes.join(", ")} — All brands`
+      : trendDrinkTypes.length === 0
+        ? `${trendBrands.join(", ")} — All drink types`
+        : `${trendDrinkTypes.join(", ")} — ${trendBrands.join(", ")}`;
+
+  useEffect(() => {
+    const storedEntries = getStoredCoffeeShopPriceEntries();
+    const frameId = window.requestAnimationFrame(() => {
+      if (storedEntries) {
+        setEntries(storedEntries);
+      }
+
+      setHasLoadedStoredEntries(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStoredEntries || typeof window === "undefined") {
       return;
     }
 
-    setTemperature("Iced");
-    setSize("Standard");
-    setMilkType("Oat");
-  }
+    window.localStorage.setItem(COFFEE_PRICE_STORAGE_KEY, JSON.stringify(entries));
+    window.localStorage.removeItem(LEGACY_COFFEE_PRICE_STORAGE_KEY);
+  }, [entries, hasLoadedStoredEntries]);
 
   function handleAddOrder(entry: CoffeeShopPriceEntry) {
     setEntries((current) => [entry, ...current]);
@@ -204,7 +309,14 @@ export function CoffeeShopPricesPage() {
     setSize(entry.size);
     setDateFrom(DEFAULT_DATE_FROM);
     setDateTo(getTodayDateString());
-    setActiveView("price-trend");
+  }
+
+  function handleDeleteOrder(id: string) {
+    if (!window.confirm(copy.deleteOrderConfirm)) {
+      return;
+    }
+
+    setEntries((current) => current.filter((entry) => entry.id !== id));
   }
 
   return (
@@ -230,7 +342,7 @@ export function CoffeeShopPricesPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-3 pt-1 md:grid-cols-3">
+                <div className="grid gap-3 pt-1 grid-cols-2 md:grid-cols-4">
                   {heroLinks.map((item) => (
                     <button
                       key={item.key}
@@ -296,38 +408,115 @@ export function CoffeeShopPricesPage() {
 
               <div className="mt-6 rounded-[1.8rem] border border-[rgba(97,68,44,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(255,249,242,0.94)_100%)] p-4 sm:p-5 lg:p-6">
                 <div className="space-y-6">
-                  <CoffeeShopPriceFilterBar
-                    brands={coffeeShopBrands}
-                    allBrandsValue={ALL_BRANDS}
-                    selectedBrand={selectedBrand}
-                    drinkType={drinkType}
-                    temperature={temperature}
-                    milkType={milkType}
-                    size={size}
-                    dateFrom={dateFrom}
-                    dateTo={dateTo}
-                    onBrandChange={setSelectedBrand}
-                    onDrinkTypeChange={handleDrinkTypeChange}
-                    onTemperatureChange={setTemperature}
-                    onMilkTypeChange={setMilkType}
-                    onSizeChange={setSize}
-                    onDateFromChange={setDateFrom}
-                    onDateToChange={setDateTo}
-                    onReset={resetFilters}
-                  />
+                  <div className="rounded-[1.55rem] border border-[rgba(97,68,44,0.1)] bg-[rgba(255,252,248,0.76)] p-3 sm:p-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground" htmlFor="trendBrands">
+                          {copy.brand}
+                        </label>
+                        <select
+                          id="trendBrands"
+                          className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                          multiple
+                          value={trendBrands}
+                          onChange={(e) => {
+                            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                            setTrendBrands(selectedOptions);
+                          }}
+                        >
+                          {brands.map((brand) => (
+                            <option key={brand} value={brand}>
+                              {brand}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-muted">Hold Ctrl/Cmd to select multiple</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground" htmlFor="trendDrinkTypes">
+                          {copy.drinkType}
+                        </label>
+                        <select
+                          id="trendDrinkTypes"
+                          className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                          multiple
+                          value={trendDrinkTypes}
+                          onChange={(e) => {
+                            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                            setTrendDrinkTypes(selectedOptions as DrinkType[]);
+                          }}
+                        >
+                          {labelByDrinkType.Latte && (
+                            <option value="Latte">{labelByDrinkType.Latte}</option>
+                          )}
+                          {labelByDrinkType.Americano && (
+                            <option value="Americano">{labelByDrinkType.Americano}</option>
+                          )}
+                        </select>
+                        <p className="text-xs text-muted">Hold Ctrl/Cmd to select multiple</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground" htmlFor="trendDateFrom">
+                          {copy.from}
+                        </label>
+                        <input
+                          id="trendDateFrom"
+                          type="date"
+                          className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                          value={trendDateFrom}
+                          onChange={(e) => setTrendDateFrom(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground" htmlFor="trendDateTo">
+                          {copy.to}
+                        </label>
+                        <input
+                          id="trendDateTo"
+                          type="date"
+                          className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                          value={trendDateTo}
+                          onChange={(e) => setTrendDateTo(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        className="rounded-full border border-[rgba(138,75,42,0.16)] bg-[rgba(138,75,42,0.12)] px-4 py-2 text-sm font-semibold text-accent transition hover:border-[rgba(138,75,42,0.24)] hover:bg-[rgba(138,75,42,0.16)]"
+                      >
+                        {copy.search}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTrendBrands([]);
+                          setTrendDrinkTypes(["Latte"]);
+                          setTrendDateFrom(DEFAULT_DATE_FROM);
+                          setTrendDateTo(defaultDateTo);
+                        }}
+                        className="rounded-full border border-[rgba(97,68,44,0.16)] bg-white px-4 py-2 text-sm font-semibold text-accent transition hover:border-[rgba(138,75,42,0.24)] hover:bg-[rgba(138,75,42,0.04)]"
+                      >
+                        {copy.reset}
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <SummaryStatCard
                       label={copy.selectedCoffee}
-                      value={selectedCoffeeLabel}
+                      value={trendSelectedLabel}
                     />
-                    <SummaryStatCard label={copy.matches} value={`${totalMatchingEntries}`} />
+                    <SummaryStatCard label={copy.matches} value={`${trendTotalMatchingEntries}`} />
                     <SummaryStatCard
                       label={copy.period}
                       value={
-                        dateTo
-                          ? `${formatDate(dateFrom, messages.locale)} - ${formatDate(dateTo, messages.locale)}`
-                          : formatDate(dateFrom, messages.locale)
+                        trendDateTo
+                          ? `${formatDate(trendDateFrom, messages.locale)} - ${formatDate(trendDateTo, messages.locale)}`
+                          : formatDate(trendDateFrom, messages.locale)
                       }
                     />
                     <SummaryStatCard label={copy.firstPrice} value={firstPrice !== null ? formatCurrency(firstPrice) : "—"} />
@@ -348,7 +537,7 @@ export function CoffeeShopPricesPage() {
                   </div>
 
                   <div className="rounded-[1.55rem] border border-[rgba(97,68,44,0.1)] bg-[rgba(255,252,248,0.76)] p-3 sm:p-4">
-                    {trendData.length < 2 ? (
+                    {trendData.length < 2 || trendBrandsWithData.length === 0 ? (
                       <EmptyBlock
                         title={copy.notEnoughData}
                         description={copy.notEnoughDataDescription}
@@ -383,19 +572,185 @@ export function CoffeeShopPricesPage() {
                               labelStyle={{ color: "#5f4b3d", fontWeight: 600 }}
                               formatter={(value) => formatTooltipCurrency(value, copy.tablePrice, messages.locale)}
                             />
-                            <Line
-                              type="monotone"
-                              dataKey="price"
-                              stroke="#8a4b2a"
-                              strokeWidth={3}
-                              dot={{ r: 4, fill: "#fffaf3", stroke: "#8a4b2a", strokeWidth: 2 }}
-                              activeDot={{ r: 5, fill: "#8a4b2a", stroke: "#fffaf3", strokeWidth: 2 }}
-                            />
+                            {trendBrandsWithData.map((brand, index) => (
+                              <Line
+                                key={brand}
+                                type="monotone"
+                                dataKey={brand}
+                                stroke={`hsl(${index * 137.5 % 360}, 60%, 45%)`}
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: "#fffaf3", stroke: `hsl(${index * 137.5 % 360}, 60%, 45%)`, strokeWidth: 2 }}
+                                activeDot={{ r: 5, fill: `hsl(${index * 137.5 % 360}, 60%, 45%)`, stroke: "#fffaf3", strokeWidth: 2 }}
+                                connectNulls={false}
+                              />
+                            ))}
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {activeView === "brand-comparison" ? (
+            <section className="animate-rise card-surface rounded-[2rem] p-5 sm:p-6 lg:p-7">
+              <div className="space-y-2">
+                <h2 className="display-font text-3xl font-semibold text-foreground">
+                  {copy.brandComparisonTitle}
+                </h2>
+                <p className="text-sm text-muted">
+                  {copy.brandComparisonDescription}
+                </p>
+              </div>
+
+              <div className="mt-6 rounded-[1.8rem] border border-[rgba(97,68,44,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(255,249,242,0.94)_100%)] p-4 sm:p-5 lg:p-6">
+                {/* Brand Comparison Filters */}
+                <div className="rounded-[1.25rem] border border-[rgba(97,68,44,0.12)] bg-[rgba(255,252,248,0.82)] p-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground" htmlFor="comparisonDrinkType">
+                        {copy.drinkType}
+                      </label>
+                      <select
+                        id="comparisonDrinkType"
+                        className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                        value={comparisonDrinkType}
+                        onChange={(e) => setComparisonDrinkType(e.target.value as DrinkType)}
+                      >
+                        {labelByDrinkType.Latte && (
+                          <option value="Latte">{labelByDrinkType.Latte}</option>
+                        )}
+                        {labelByDrinkType.Americano && (
+                          <option value="Americano">{labelByDrinkType.Americano}</option>
+                        )}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground" htmlFor="comparisonBrands">
+                        {copy.brand}
+                      </label>
+                      <select
+                        id="comparisonBrands"
+                        className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                        multiple
+                        value={comparisonBrands}
+                        onChange={(e) => {
+                          const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                          setComparisonBrands(selectedOptions);
+                        }}
+                      >
+                        {brands.map((brand) => (
+                          <option key={brand} value={brand}>
+                            {brand}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground" htmlFor="comparisonDateFrom">
+                        {copy.from}
+                      </label>
+                      <input
+                        id="comparisonDateFrom"
+                        type="date"
+                        className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                        value={comparisonDateFrom}
+                        onChange={(e) => setComparisonDateFrom(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground" htmlFor="comparisonDateTo">
+                        {copy.to}
+                      </label>
+                      <input
+                        id="comparisonDateTo"
+                        type="date"
+                        className="w-full rounded-[0.75rem] border border-[rgba(97,68,44,0.16)] bg-white px-3 py-2 text-sm"
+                        value={comparisonDateTo}
+                        onChange={(e) => setComparisonDateTo(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      className="rounded-full border border-[rgba(138,75,42,0.16)] bg-[rgba(138,75,42,0.12)] px-4 py-2 text-sm font-semibold text-accent transition hover:border-[rgba(138,75,42,0.24)] hover:bg-[rgba(138,75,42,0.16)]"
+                    >
+                      {copy.search}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComparisonDrinkType("Latte");
+                        setComparisonBrands([]);
+                        setComparisonDateFrom("2025-01-01");
+                        setComparisonDateTo("2025-12-31");
+                      }}
+                      className="rounded-full border border-[rgba(97,68,44,0.16)] bg-white px-4 py-2 text-sm font-semibold text-accent transition hover:border-[rgba(138,75,42,0.24)] hover:bg-[rgba(138,75,42,0.04)]"
+                    >
+                      {copy.reset}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6 rounded-[1.55rem] border border-[rgba(97,68,44,0.1)] bg-[rgba(255,252,248,0.76)] p-3 sm:p-4">
+                  {comparisonData.length < 2 ? (
+                    <EmptyBlock
+                      title={copy.notEnoughBrands}
+                      description={copy.notEnoughBrandsDescription}
+                    />
+                  ) : (
+                    <div className="h-[320px] rounded-[1.45rem] border border-[rgba(97,68,44,0.08)] bg-[rgba(255,255,255,0.82)] p-4 sm:h-[360px] sm:p-5">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={comparisonData} margin={{ top: 14, right: 12, left: -18, bottom: 6 }}>
+                          <CartesianGrid stroke="rgba(97,68,44,0.07)" vertical={false} />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fill: "#7b6555", fontSize: 12 }}
+                            axisLine={false}
+                            tickLine={false}
+                            dy={8}
+                          />
+                          <YAxis
+                            tick={{ fill: "#7b6555", fontSize: 12 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(value) => `€${value.toFixed(1)}`}
+                            width={46}
+                          />
+                          <Tooltip
+                            cursor={{ stroke: "rgba(138,75,42,0.16)", strokeWidth: 1 }}
+                            contentStyle={{
+                              borderRadius: "18px",
+                              border: "1px solid rgba(97,68,44,0.12)",
+                              background: "rgba(255,250,243,0.98)",
+                              boxShadow: "0 20px 40px rgba(76,44,23,0.08)",
+                            }}
+                            labelStyle={{ color: "#5f4b3d", fontWeight: 600 }}
+                            formatter={(value, name) => formatTooltipCurrency(value, `${copy.tablePrice} (${name})`, messages.locale)}
+                          />
+                          {comparisonBrandsWithData.map((brand, index) => (
+                            <Line
+                              key={brand}
+                              type="monotone"
+                              dataKey={brand}
+                              stroke={`hsl(${(index * 137.5) % 360}, 70%, 50%)`}
+                              strokeWidth={3}
+                              dot={{ r: 4, fill: "#fffaf3", strokeWidth: 2 }}
+                              activeDot={{ r: 5, strokeWidth: 2 }}
+                              connectNulls={true}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
@@ -409,7 +764,7 @@ export function CoffeeShopPricesPage() {
                 </h2>
               </div>
 
-              {recentEntries.length === 0 ? (
+              {orderHistoryEntries.length === 0 ? (
                 <EmptyBlock
                   title={copy.noOrders}
                   description={copy.noOrdersDescription}
@@ -420,15 +775,15 @@ export function CoffeeShopPricesPage() {
                     <table className="min-w-full overflow-hidden rounded-[1.5rem] bg-[rgba(255,252,248,0.86)] text-left">
                       <thead className="bg-[rgba(138,75,42,0.06)] text-sm text-muted">
                         <tr>
-                          {[copy.tableDate, copy.tableBrand, copy.tableDrink, copy.tableTemperature, copy.tableMilk, copy.tableSize, copy.tablePrice].map((column) => (
+                          {[copy.tableDate, copy.tableBrand, copy.tableDrink, copy.tableTemperature, copy.tableMilk, copy.tableSize, copy.tablePrice, ""].map((column, index) => (
                             <th key={column} className="px-4 py-4 font-semibold">
-                              {column}
+                              {index === 7 ? null : column}
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {recentEntries.map((entry) => (
+                        {orderHistoryEntries.map((entry) => (
                           <tr key={entry.id} className="border-t border-[rgba(97,68,44,0.08)] text-sm text-foreground transition hover:bg-[rgba(138,75,42,0.03)] first:border-t-0">
                             <td className="px-4 py-4 text-muted">{formatDate(entry.date, messages.locale)}</td>
                             <td className="px-4 py-4">
@@ -443,6 +798,15 @@ export function CoffeeShopPricesPage() {
                                 {formatCurrency(entry.finalPrice)}
                               </span>
                             </td>
+                            <td className="px-4 py-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteOrder(entry.id)}
+                                className="rounded-full border border-[rgba(97,68,44,0.12)] bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-[rgba(138,75,42,0.16)] hover:bg-white hover:text-accent"
+                              >
+                                {copy.deleteOrder}
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -450,7 +814,7 @@ export function CoffeeShopPricesPage() {
                   </div>
 
                   <div className="grid gap-4 lg:hidden">
-                    {recentEntries.map((entry) => (
+                    {orderHistoryEntries.map((entry) => (
                       <article
                         key={entry.id}
                         className="rounded-[1.75rem] border border-[rgba(97,68,44,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(255,249,242,0.94)_100%)] p-4 transition hover:border-[rgba(138,75,42,0.12)] hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,249,242,0.97)_100%)]"
@@ -471,6 +835,15 @@ export function CoffeeShopPricesPage() {
                           <OrderMeta label={copy.tableTemperature} value={labelByTemperature[entry.temperature]} />
                           <OrderMeta label={copy.tableMilk} value={labelByMilkType[entry.milkType]} />
                           <OrderMeta label={copy.tableSize} value={labelBySize[entry.size]} />
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(entry.id)}
+                            className="rounded-full border border-[rgba(97,68,44,0.12)] bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-[rgba(138,75,42,0.16)] hover:bg-white hover:text-accent"
+                          >
+                            {copy.deleteOrder}
+                          </button>
                         </div>
                       </article>
                     ))}

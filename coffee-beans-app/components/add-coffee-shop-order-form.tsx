@@ -51,6 +51,41 @@ function createDefaultDraft(): OrderDraft {
   };
 }
 
+function normalizePriceInput(value: string) {
+  const trimmedValue = value.replace(/\s+/g, "").replace(/,/g, ".");
+  const sanitizedValue = trimmedValue.replace(/[^0-9.]/g, "");
+  const firstDotIndex = sanitizedValue.indexOf(".");
+
+  if (firstDotIndex === -1) {
+    return sanitizedValue;
+  }
+
+  const integerPart = sanitizedValue.slice(0, firstDotIndex + 1);
+  const decimalPart = sanitizedValue.slice(firstDotIndex + 1).replace(/\./g, "");
+
+  return `${integerPart}${decimalPart}`;
+}
+
+function parsePriceInput(value: string) {
+  const normalizedValue = normalizePriceInput(value);
+
+  if (!normalizedValue || normalizedValue === ".") {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
+function createOrderId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `coffee-order-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[11px] font-semibold tracking-[0.18em] text-accent/70 uppercase">
@@ -82,11 +117,17 @@ export function AddCoffeeShopOrderForm({
   const copy = messages.coffeePrices;
   const [draft, setDraft] = useState<OrderDraft>(createDefaultDraft);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
+  const [recentlyAddedOrder, setRecentlyAddedOrder] = useState<CoffeeShopPriceEntry | null>(null);
 
   const isAmericano = draft.drinkType === "Americano";
   const isCustomBrand = draft.brand === "Other";
 
   function updateDraft<K extends keyof OrderDraft>(key: K, value: OrderDraft[K]) {
+    if (message) {
+      setMessage(null);
+    }
+
     setDraft((current) => ({
       ...current,
       [key]: value,
@@ -123,17 +164,21 @@ export function AddCoffeeShopOrderForm({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const finalPrice = Number(draft.finalPrice);
-    const oatMilkExtra = !isAmericano && draft.milkType === "Oat" ? Number(draft.oatMilkExtra || "0") : 0;
+    const finalPrice = parsePriceInput(draft.finalPrice);
+    const oatMilkExtra =
+      !isAmericano && draft.milkType === "Oat"
+        ? (parsePriceInput(draft.oatMilkExtra) ?? 0)
+        : 0;
     const resolvedBrand = draft.brand === "Other" ? draft.customBrand.trim() : draft.brand;
 
-    if (!resolvedBrand || Number.isNaN(finalPrice) || finalPrice <= 0 || !draft.date) {
+    if (!resolvedBrand || finalPrice === null || finalPrice <= 0 || !draft.date) {
+      setMessageTone("error");
       setMessage(copy.addValidationError);
       return;
     }
 
     const entry: CoffeeShopPriceEntry = {
-      id: `${resolvedBrand}-${draft.drinkType}-${draft.temperature}-${draft.size}-${draft.date}-${Date.now()}`,
+      id: createOrderId(),
       brand: resolvedBrand,
       drinkType: draft.drinkType,
       temperature: draft.temperature,
@@ -147,7 +192,9 @@ export function AddCoffeeShopOrderForm({
 
     onAddOrder(entry);
     setDraft(createDefaultDraft());
+    setMessageTone("success");
     setMessage(copy.addSuccess);
+    setRecentlyAddedOrder(entry);
   }
 
   const localizedBrandOptions = [
@@ -288,10 +335,8 @@ export function AddCoffeeShopOrderForm({
             <InputShell>
               <input
                 id="order-final-price"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min="0"
-                step="0.01"
                 value={draft.finalPrice}
                 onChange={(event) => updateDraft("finalPrice", event.target.value)}
                 placeholder="5.90"
@@ -328,11 +373,61 @@ export function AddCoffeeShopOrderForm({
         </div>
 
         {message ? (
-          <div className="mt-5 rounded-[1.25rem] border border-[rgba(97,68,44,0.1)] bg-[rgba(255,252,248,0.8)] px-4 py-3 text-sm text-foreground">
+          <div
+            className={`mt-5 rounded-[1.25rem] px-4 py-3 text-sm ${
+              messageTone === "success"
+                ? "border border-[rgba(97,68,44,0.1)] bg-[rgba(255,252,248,0.8)] text-foreground"
+                : "border border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
             {message}
+          </div>
+        ) : null}
+
+        {recentlyAddedOrder ? (
+          <div className="mt-5 rounded-[1.4rem] border border-[rgba(97,68,44,0.12)] bg-[rgba(255,252,248,0.88)] p-4 shadow-[0_14px_30px_rgba(76,44,23,0.05)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold tracking-[0.18em] text-accent/70 uppercase">
+                  {copy.addSuccess}
+                </p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {recentlyAddedOrder.brand}
+                </h3>
+                <p className="text-sm text-muted">
+                  {recentlyAddedOrder.drinkType === "Americano"
+                    ? `${recentlyAddedOrder.temperature} ${recentlyAddedOrder.drinkType}`
+                    : `${recentlyAddedOrder.temperature} ${recentlyAddedOrder.milkType} ${recentlyAddedOrder.drinkType}`}
+                </p>
+              </div>
+              <div className="rounded-full bg-[rgba(138,75,42,0.12)] px-3 py-1 text-sm font-semibold text-accent">
+                {new Intl.NumberFormat(messages.locale, {
+                  style: "currency",
+                  currency: "EUR",
+                  minimumFractionDigits: 2,
+                }).format(recentlyAddedOrder.finalPrice)}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <PreviewMeta label={copy.brand} value={recentlyAddedOrder.brand} />
+              <PreviewMeta label={copy.size} value={recentlyAddedOrder.size} />
+              <PreviewMeta label={copy.date} value={recentlyAddedOrder.date} />
+            </div>
           </div>
         ) : null}
       </form>
     </section>
+  );
+}
+
+function PreviewMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[1.05rem] border border-[rgba(97,68,44,0.08)] bg-white/72 px-3 py-3">
+      <p className="text-[10px] font-semibold tracking-[0.16em] text-accent/70 uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+    </div>
   );
 }
