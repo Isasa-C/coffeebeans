@@ -29,6 +29,78 @@ const DEFAULT_DATE_FROM = "2026-04-17";
 const COFFEE_PRICE_STORAGE_KEY = "coffee-shop-orders";
 const LEGACY_COFFEE_PRICE_STORAGE_KEY = "coffee-shop-price-entries";
 
+function mergeCoffeeShopEntries(...collections: CoffeeShopPriceEntry[][]) {
+  const dedupedEntries = new Map<string, CoffeeShopPriceEntry>();
+
+  for (const collection of collections) {
+    for (const entry of collection) {
+      if (!dedupedEntries.has(entry.id)) {
+        dedupedEntries.set(entry.id, entry);
+      }
+    }
+  }
+
+  return Array.from(dedupedEntries.values()).sort((left, right) => {
+    const dateCompare = right.date.localeCompare(left.date);
+
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+
+    return right.id.localeCompare(left.id);
+  });
+}
+
+async function fetchCoffeeShopOrders() {
+  const response = await fetch("/api/coffee-shop-orders", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch coffee shop orders.");
+  }
+
+  const payload = (await response.json()) as { data?: unknown };
+
+  if (!Array.isArray(payload.data) || !payload.data.every(isCoffeeShopPriceEntry)) {
+    throw new Error("Invalid coffee shop order payload.");
+  }
+
+  return payload.data;
+}
+
+async function saveCoffeeShopOrder(entry: CoffeeShopPriceEntry) {
+  const response = await fetch("/api/coffee-shop-orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(entry),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save coffee shop order.");
+  }
+
+  const payload = (await response.json()) as { data?: unknown };
+
+  if (!payload.data || !isCoffeeShopPriceEntry(payload.data)) {
+    throw new Error("Invalid saved coffee shop order payload.");
+  }
+
+  return payload.data;
+}
+
+async function deleteCoffeeShopOrder(id: string) {
+  const response = await fetch(`/api/coffee-shop-orders/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete coffee shop order.");
+  }
+}
+
 function isCoffeeShopPriceEntry(value: unknown): value is CoffeeShopPriceEntry {
   if (!value || typeof value !== "object") {
     return false;
@@ -277,17 +349,38 @@ export function CoffeeShopPricesPage() {
         : `${trendDrinkTypes.join(", ")} — ${trendBrands.join(", ")}`;
 
   useEffect(() => {
-    const storedEntries = getStoredCoffeeShopPriceEntries();
-    const frameId = window.requestAnimationFrame(() => {
-      if (storedEntries) {
-        setEntries(storedEntries);
-      }
+    let isCancelled = false;
 
-      setHasLoadedStoredEntries(true);
-    });
+    async function loadEntries() {
+      const storedEntries = getStoredCoffeeShopPriceEntries() ?? [];
+
+      try {
+        if (storedEntries.length > 0) {
+          await Promise.allSettled(storedEntries.map((entry) => saveCoffeeShopOrder(entry)));
+        }
+
+        const serverEntries = await fetchCoffeeShopOrders();
+
+        if (!isCancelled) {
+          setEntries(mergeCoffeeShopEntries(serverEntries, coffeeShopPriceData));
+        }
+      } catch (error) {
+        console.error("Failed to sync coffee shop orders", error);
+
+        if (!isCancelled) {
+          setEntries(mergeCoffeeShopEntries(storedEntries, coffeeShopPriceData));
+        }
+      } finally {
+        if (!isCancelled) {
+          setHasLoadedStoredEntries(true);
+        }
+      }
+    }
+
+    void loadEntries();
 
     return () => {
-      window.cancelAnimationFrame(frameId);
+      isCancelled = true;
     };
   }, []);
 
@@ -300,8 +393,10 @@ export function CoffeeShopPricesPage() {
     window.localStorage.removeItem(LEGACY_COFFEE_PRICE_STORAGE_KEY);
   }, [entries, hasLoadedStoredEntries]);
 
-  function handleAddOrder(entry: CoffeeShopPriceEntry) {
-    setEntries((current) => [entry, ...current]);
+  async function handleAddOrder(entry: CoffeeShopPriceEntry) {
+    const savedEntry = await saveCoffeeShopOrder(entry);
+
+    setEntries((current) => mergeCoffeeShopEntries([savedEntry], current));
     setSelectedBrand(entry.brand);
     setDrinkType(entry.drinkType);
     setTemperature(entry.temperature);
@@ -311,12 +406,20 @@ export function CoffeeShopPricesPage() {
     setDateTo(getTodayDateString());
   }
 
-  function handleDeleteOrder(id: string) {
+  async function handleDeleteOrder(id: string) {
     if (!window.confirm(copy.deleteOrderConfirm)) {
       return;
     }
 
+    const previousEntries = entries;
     setEntries((current) => current.filter((entry) => entry.id !== id));
+
+    try {
+      await deleteCoffeeShopOrder(id);
+    } catch (error) {
+      console.error("Failed to delete coffee shop order", error);
+      setEntries(previousEntries);
+    }
   }
 
   return (

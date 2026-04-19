@@ -11,7 +11,7 @@ type MilkType = CoffeeShopPriceEntry["milkType"];
 type Size = CoffeeShopPriceEntry["size"];
 
 type AddCoffeeShopOrderFormProps = {
-  onAddOrder: (entry: CoffeeShopPriceEntry) => void;
+  onAddOrder: (entry: CoffeeShopPriceEntry) => Promise<void>;
 };
 
 type OrderDraft = {
@@ -119,6 +119,7 @@ export function AddCoffeeShopOrderForm({
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [recentlyAddedOrder, setRecentlyAddedOrder] = useState<CoffeeShopPriceEntry | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isAmericano = draft.drinkType === "Americano";
   const isCustomBrand = draft.brand === "Other";
@@ -161,7 +162,7 @@ export function AddCoffeeShopOrderForm({
     }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const finalPrice = parsePriceInput(draft.finalPrice);
@@ -190,11 +191,19 @@ export function AddCoffeeShopOrderForm({
       notes: draft.notes.trim() || undefined,
     };
 
-    onAddOrder(entry);
-    setDraft(createDefaultDraft());
-    setMessageTone("success");
-    setMessage(copy.addSuccess);
-    setRecentlyAddedOrder(entry);
+    try {
+      setIsSubmitting(true);
+      await onAddOrder(entry);
+      setDraft(createDefaultDraft());
+      setMessageTone("success");
+      setMessage(copy.addSuccess);
+      setRecentlyAddedOrder(entry);
+    } catch {
+      setMessageTone("error");
+      setMessage(copy.addValidationError);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const localizedBrandOptions = [
@@ -349,9 +358,10 @@ export function AddCoffeeShopOrderForm({
             <FieldLabel>&nbsp;</FieldLabel>
             <button
               type="submit"
+              disabled={isSubmitting}
               className="inline-flex h-[54px] w-full items-center justify-center rounded-[1.25rem] border border-[rgba(97,68,44,0.12)] bg-accent px-5 text-sm font-semibold text-white transition duration-200 hover:bg-accent-strong hover:shadow-[0_14px_28px_rgba(138,75,42,0.16)]"
             >
-              {copy.add}
+              {isSubmitting ? "Saving..." : copy.add}
             </button>
           </div>
         </div>

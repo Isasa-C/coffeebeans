@@ -41,6 +41,7 @@ prisma/*.db-journal
 # local uploads
 public/uploads/*
 !public/uploads/.gitkeep
+public/case-study-view.html
 
 # vercel
 .vercel

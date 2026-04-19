@@ -19,6 +19,22 @@ model CoffeeBean {
   imageUrl  String
   imageFit  String   @default("contain")
   location  String?
+  roastType String   @default("Medium")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CoffeeShopOrder {
+  id           String   @id
+  brand        String
+  drinkType    String
+  temperature  String
+  milkType     String
+  size         String
+  finalPrice   Float
+  oatMilkExtra Float    @default(0)
+  date         String
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

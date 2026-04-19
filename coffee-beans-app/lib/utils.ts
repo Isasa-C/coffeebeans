@@ -1,4 +1,5 @@
-import type { CoffeeBean } from "@prisma/client";
+import type { CoffeeBean, CoffeeShopOrder } from "@prisma/client";
+import type { CoffeeShopPriceEntry } from "@/lib/coffee-shop-prices";
 
 const DEFAULT_WEIGHT_GRAMS = 250;
 
@@ -36,5 +37,20 @@ export function formatBeanRecord(bean: CoffeeBean): BeanRecord {
     imageUrl: bean.imageUrl,
     createdAt: bean.createdAt.toISOString(),
     updatedAt: bean.updatedAt.toISOString(),
+  };
+}
+
+export function formatCoffeeShopOrderRecord(order: CoffeeShopOrder): CoffeeShopPriceEntry {
+  return {
+    id: order.id,
+    brand: order.brand,
+    drinkType: order.drinkType as CoffeeShopPriceEntry["drinkType"],
+    temperature: order.temperature as CoffeeShopPriceEntry["temperature"],
+    milkType: order.milkType as CoffeeShopPriceEntry["milkType"],
+    size: order.size as CoffeeShopPriceEntry["size"],
+    finalPrice: Number(order.finalPrice),
+    oatMilkExtra: Number(order.oatMilkExtra),
+    date: order.date,
+    notes: order.notes ?? undefined,
   };
 }
