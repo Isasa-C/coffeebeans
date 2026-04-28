@@ -23,7 +23,8 @@ type DrinkType = CoffeeShopPriceEntry["drinkType"];
 type Temperature = CoffeeShopPriceEntry["temperature"];
 type MilkType = CoffeeShopPriceEntry["milkType"];
 type Size = CoffeeShopPriceEntry["size"];
-type ActiveView = "add-order" | "price-trend" | "brand-comparison" | "order-history";
+type ActiveView = "add" | "cafe-prices" | "order-history";
+type CafePriceView = "by-brand" | "by-drink-type";
 const ALL_BRANDS = "__all__";
 const DEFAULT_DATE_FROM = "2026-04-17";
 const COFFEE_PRICE_STORAGE_KEY = "coffee-shop-orders";
@@ -219,10 +220,9 @@ export function CoffeeShopPricesPage() {
     Large: copy.large,
   };
   const heroLinks = [
-    { key: "add-order" as const, title: copy.tabAddCoffee },
-    { key: "price-trend" as const, title: copy.tabPriceTrend },
-    { key: "brand-comparison" as const, title: copy.brandComparisonTitle },
-    { key: "order-history" as const, title: copy.tabOrderHistory },
+    { key: "add" as const, title: "Add" },
+    { key: "cafe-prices" as const, title: "Cafe Prices" },
+    { key: "order-history" as const, title: "Order History" },
   ] as const;
 
   const [entries, setEntries] = useState<CoffeeShopPriceEntry[]>(coffeeShopPriceData);
@@ -243,7 +243,8 @@ export function CoffeeShopPricesPage() {
   const [size, setSize] = useState<Size>("Standard");
   const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM);
   const [dateTo, setDateTo] = useState(defaultDateTo);
-  const [activeView, setActiveView] = useState<ActiveView>("add-order");
+  const [activeView, setActiveView] = useState<ActiveView>("cafe-prices");
+  const [cafePriceView, setCafePriceView] = useState<CafePriceView>("by-drink-type");
   const activeBrand =
     selectedBrand === ALL_BRANDS || brands.includes(selectedBrand)
       ? selectedBrand
@@ -262,6 +263,26 @@ export function CoffeeShopPricesPage() {
   const [comparisonDateTo, setComparisonDateTo] = useState("2025-12-31");
 
   const normalizedMilkType: MilkType = drinkType === "Americano" ? "None" : milkType;
+
+  useEffect(() => {
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+
+    if (requestedView === "price-trend") {
+      setActiveView("cafe-prices");
+      setCafePriceView("by-brand");
+      return;
+    }
+
+    if (requestedView === "brand-comparison") {
+      setActiveView("cafe-prices");
+      setCafePriceView("by-drink-type");
+      return;
+    }
+
+    if (requestedView === "order-history") {
+      setActiveView(requestedView);
+    }
+  }, []);
 
   const trendFilteredEntries = useMemo(() => {
     return entries.filter((entry) => {
@@ -338,6 +359,25 @@ export function CoffeeShopPricesPage() {
 
   const orderHistoryEntries = [...entries].sort((left, right) => right.date.localeCompare(left.date));
 
+  // Organize entries by drink type first, then by brand
+  const entriesByDrinkType = useMemo(() => {
+    const grouped: Record<DrinkType, CoffeeShopPriceEntry[]> = {
+      Latte: [],
+      Americano: [],
+    };
+
+    for (const entry of entries) {
+      grouped[entry.drinkType].push(entry);
+    }
+
+    // Sort each group by brand (alphabetically)
+    for (const drinkType of Object.keys(grouped) as DrinkType[]) {
+      grouped[drinkType].sort((left, right) => left.brand.localeCompare(right.brand));
+    }
+
+    return grouped;
+  }, [entries]);
+
   // Trend section labels and counts
   const trendTotalMatchingEntries = trendFilteredEntries.length;
   const trendSelectedLabel = trendBrands.length === 0 && trendDrinkTypes.length === 0
@@ -404,6 +444,7 @@ export function CoffeeShopPricesPage() {
     setSize(entry.size);
     setDateFrom(DEFAULT_DATE_FROM);
     setDateTo(getTodayDateString());
+    setActiveView("cafe-prices");
   }
 
   async function handleDeleteOrder(id: string) {
@@ -432,9 +473,9 @@ export function CoffeeShopPricesPage() {
               <div className="space-y-4">
                 <Link
                   href="/"
-                  className="inline-flex rounded-full border border-line bg-white/72 px-4 py-2.5 text-sm font-semibold text-foreground transition duration-200 hover:border-[rgba(138,75,42,0.16)] hover:bg-white hover:text-accent"
+                  className="inline-flex text-sm font-semibold text-accent underline decoration-2 underline-offset-4 transition hover:text-accent-strong"
                 >
-                  {copy.backToCoffeeBean}
+                  ← My Beans
                 </Link>
                 <div className="space-y-3">
                   <h1 className="display-font text-4xl font-semibold text-accent sm:text-5xl">
@@ -445,49 +486,6 @@ export function CoffeeShopPricesPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-3 pt-1 grid-cols-2 md:grid-cols-4">
-                  {heroLinks.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setActiveView(item.key)}
-                      aria-pressed={activeView === item.key}
-                      className={`rounded-[1.25rem] border px-4 py-3 text-left transition duration-200 ${
-                        activeView === item.key
-                          ? "border-[rgba(138,75,42,0.16)] bg-[rgba(138,75,42,0.12)] shadow-[0_12px_24px_rgba(138,75,42,0.08)]"
-                          : "border-[rgba(97,68,44,0.08)] bg-[rgba(255,252,248,0.82)] hover:border-[rgba(138,75,42,0.16)] hover:bg-white"
-                      }`}
-                    >
-                      <p
-                        className={`text-base font-semibold ${
-                          activeView === item.key ? "text-accent" : "text-foreground"
-                        }`}
-                      >
-                        {item.title}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <div className="rounded-full border border-line bg-card/85 px-3 py-2">
-                  <label className="mr-2 text-sm font-semibold text-foreground" htmlFor="coffeePricesLanguageSwitcher">
-                    {messages.languageLabel}
-                  </label>
-                  <select
-                    id="coffeePricesLanguageSwitcher"
-                    className="rounded-full bg-transparent text-sm font-semibold text-accent outline-none"
-                    value={language}
-                    onChange={(event) => setLanguage(event.target.value as typeof language)}
-                  >
-                    {languageOptions.map((option) => (
-                      <option key={option.code} value={option.code}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -495,13 +493,167 @@ export function CoffeeShopPricesPage() {
         </div>
 
         <div className="min-h-[520px]">
-          {activeView === "add-order" ? (
-            <div className="animate-rise">
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            {heroLinks.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveView(item.key)}
+                aria-pressed={activeView === item.key}
+                className={`rounded-[1.25rem] border px-4 py-3 text-left transition duration-200 ${
+                  activeView === item.key
+                    ? "border-[rgba(138,75,42,0.16)] bg-[rgba(138,75,42,0.12)] shadow-[0_12px_24px_rgba(138,75,42,0.08)]"
+                    : "border-[rgba(97,68,44,0.08)] bg-[rgba(255,252,248,0.82)] hover:border-[rgba(138,75,42,0.16)] hover:bg-white"
+                }`}
+              >
+                <p
+                  className={`text-base font-semibold ${
+                    activeView === item.key ? "text-accent" : "text-foreground"
+                  }`}
+                >
+                  {item.title}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {activeView === "add" ? (
+            <div className="animate-rise space-y-6">
               <AddCoffeeShopOrderForm onAddOrder={handleAddOrder} />
+
+              {/* My Beans - Organized by drink type, then brand */}
+              {entries.length > 0 ? (
+                <section className="card-surface rounded-[2rem] p-5 sm:p-6 lg:p-7">
+                  <div className="mb-6 space-y-2">
+                    <h2 className="display-font text-3xl font-semibold text-foreground">
+                      My Beans
+                    </h2>
+                    <p className="text-sm text-muted">
+                      Add cafe orders here so your saved coffees can be compared with prices outside home.
+                    </p>
+                  </div>
+
+                  <div className="space-y-8">
+                    {(Object.keys(entriesByDrinkType) as DrinkType[]).map((drinkType) => {
+                      const entriesForDrink = entriesByDrinkType[drinkType];
+                      if (entriesForDrink.length === 0) return null;
+
+                      return (
+                        <div key={drinkType}>
+                          <h3 className="mb-4 text-lg font-semibold text-foreground">
+                            {labelByDrinkType[drinkType]}
+                          </h3>
+                          <div className="hidden overflow-hidden rounded-[1.5rem] border border-[rgba(97,68,44,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.68)_0%,rgba(255,249,242,0.92)_100%)] lg:block">
+                            <table className="min-w-full text-left">
+                              <thead className="bg-[rgba(138,75,42,0.06)] text-sm text-muted">
+                                <tr>
+                                  {[copy.tableBrand, copy.tableDrink, copy.tableTemperature, copy.tableMilk, copy.tableSize, copy.tablePrice, copy.tableDate, ""].map((column, index) => (
+                                    <th key={column} className="px-4 py-4 font-semibold">
+                                      {index === 7 ? null : column}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {entriesForDrink.map((entry) => (
+                                  <tr key={entry.id} className="border-t border-[rgba(97,68,44,0.08)] text-sm text-foreground transition hover:bg-[rgba(138,75,42,0.03)] first:border-t-0">
+                                    <td className="px-4 py-4">
+                                      <BrandBadge brand={entry.brand} />
+                                    </td>
+                                    <td className="px-4 py-4 font-semibold">{labelByDrinkType[entry.drinkType]}</td>
+                                    <td className="px-4 py-4 text-muted">{labelByTemperature[entry.temperature]}</td>
+                                    <td className="px-4 py-4 text-muted">{labelByMilkType[entry.milkType]}</td>
+                                    <td className="px-4 py-4 text-muted">{labelBySize[entry.size]}</td>
+                                    <td className="px-4 py-4">
+                                      <span className="rounded-full bg-[rgba(138,75,42,0.12)] px-3 py-1 text-sm font-semibold text-accent">
+                                        {formatCurrency(entry.finalPrice)}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-4 text-muted">{formatDate(entry.date, messages.locale)}</td>
+                                    <td className="px-4 py-4 text-right">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteOrder(entry.id)}
+                                        className="rounded-full border border-[rgba(97,68,44,0.12)] bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-[rgba(138,75,42,0.16)] hover:bg-white hover:text-accent"
+                                      >
+                                        {copy.deleteOrder}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="grid gap-3 lg:hidden">
+                            {entriesForDrink.map((entry) => (
+                              <article
+                                key={entry.id}
+                                className="rounded-[1.75rem] border border-[rgba(97,68,44,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(255,249,242,0.94)_100%)] p-4 transition hover:border-[rgba(138,75,42,0.12)] hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,249,242,0.97)_100%)]"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div>
+                                    <div className="mt-2">
+                                      <BrandBadge brand={entry.brand} />
+                                    </div>
+                                  </div>
+                                  <div className="rounded-full bg-[rgba(138,75,42,0.12)] px-3 py-1 text-sm font-semibold text-accent">
+                                    {formatCurrency(entry.finalPrice)}
+                                  </div>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                  <OrderMeta label={copy.tableDrink} value={labelByDrinkType[entry.drinkType]} />
+                                  <OrderMeta label={copy.tableTemperature} value={labelByTemperature[entry.temperature]} />
+                                  <OrderMeta label={copy.tableMilk} value={labelByMilkType[entry.milkType]} />
+                                  <OrderMeta label={copy.tableSize} value={labelBySize[entry.size]} />
+                                  <OrderMeta label={copy.tableDate} value={formatDate(entry.date, messages.locale)} />
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOrder(entry.id)}
+                                    className="rounded-full border border-[rgba(97,68,44,0.12)] bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-[rgba(138,75,42,0.16)] hover:bg-white hover:text-accent"
+                                  >
+                                    {copy.deleteOrder}
+                                  </button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
             </div>
           ) : null}
 
-          {activeView === "price-trend" ? (
+          {activeView === "cafe-prices" ? (
+            <div className="mb-4 flex justify-end">
+              <div className="inline-flex rounded-full border border-line bg-white/70 p-1">
+                {[
+                  { key: "by-drink-type" as const, label: "By drink type" },
+                  { key: "by-brand" as const, label: "By brand" },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setCafePriceView(item.key)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      cafePriceView === item.key
+                        ? "bg-accent text-white"
+                        : "text-foreground hover:text-accent"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {activeView === "cafe-prices" && cafePriceView === "by-brand" ? (
             <section className="animate-rise card-surface rounded-[2rem] p-5 sm:p-6 lg:p-7">
               <div className="space-y-2">
                 <h2 className="display-font text-3xl font-semibold text-foreground">
@@ -697,7 +849,7 @@ export function CoffeeShopPricesPage() {
             </section>
           ) : null}
 
-          {activeView === "brand-comparison" ? (
+          {activeView === "cafe-prices" && cafePriceView === "by-drink-type" ? (
             <section className="animate-rise card-surface rounded-[2rem] p-5 sm:p-6 lg:p-7">
               <div className="space-y-2">
                 <h2 className="display-font text-3xl font-semibold text-foreground">
@@ -956,6 +1108,32 @@ export function CoffeeShopPricesPage() {
             </section>
           ) : null}
         </div>
+        <footer className="card-surface flex flex-col gap-4 rounded-[1.75rem] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            href="/case-study"
+            className="text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
+          >
+            About this project →
+          </Link>
+
+          <div className="rounded-full border border-line bg-card/85 px-3 py-2">
+            <label className="mr-2 text-sm font-semibold text-foreground" htmlFor="coffeePricesLanguageSwitcher">
+              {messages.languageLabel}
+            </label>
+            <select
+              id="coffeePricesLanguageSwitcher"
+              className="rounded-full bg-transparent text-sm font-semibold text-accent outline-none"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as typeof language)}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </footer>
       </div>
       <ScrollToTopButton />
     </main>

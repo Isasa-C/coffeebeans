@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  KeyboardEvent,
   useRef,
   useState,
   useTransition,
@@ -20,6 +21,8 @@ type BeanCardProps = {
     min: number;
     max: number;
     average: number;
+    savedBeanCount: number;
+    averageSavedUnitPrice: number;
   };
 };
 
@@ -62,6 +65,10 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const [currentBean, setCurrentBean] = useState(bean);
   const [isDeleted, setIsDeleted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isNotesEditing, setIsNotesEditing] = useState(!bean.comments);
+  const [noteDraft, setNoteDraft] = useState(bean.comments ?? "");
+  const [isRecommendationsExpanded, setIsRecommendationsExpanded] = useState(false);
+  const [isShareTooltipVisible, setIsShareTooltipVisible] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [formValues, setFormValues] = useState(() => getBeanFormValues(bean));
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -69,6 +76,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const shareTooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const priceRange = Math.max(priceStats.max - priceStats.min, 1);
   const pricePosition = ((currentBean.price - priceStats.min) / priceRange) * 100;
   const priceDifference = currentBean.price - priceStats.average;
@@ -76,6 +84,10 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const unitPrice = currentBean.price / safeWeight;
   const roastMatches =
     roastDrinkMatches[currentBean.bestFor] ?? roastDrinkMatches.Medium;
+  const visibleRoastMatches = isRecommendationsExpanded
+    ? roastMatches
+    : roastMatches.slice(0, 2);
+  const hiddenRoastMatchCount = Math.max(roastMatches.length - 2, 0);
   const priceTrendLabel =
     Math.abs(priceDifference) < 0.5
       ? messages.priceTrendAverage
@@ -141,6 +153,89 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
+  }
+
+  function buildBeanUpdatePayload(overrides: Partial<Pick<BeanRecord, "comments" | "rating">>) {
+    const payload = new FormData();
+
+    payload.append("brand", currentBean.brand);
+    payload.append("price", currentBean.price.toString());
+    payload.append("quantity", currentBean.quantity.toString());
+    payload.append("weight", safeWeight.toString());
+    payload.append("rating", (overrides.rating ?? currentBean.rating).toString());
+    payload.append("bestFor", currentBean.bestFor);
+    payload.append("comments", overrides.comments ?? currentBean.comments ?? "");
+
+    return payload;
+  }
+
+  function saveBeanDetails(overrides: Partial<Pick<BeanRecord, "comments" | "rating">>) {
+    setActionError(null);
+    setActionMessage(null);
+
+    startTransition(async () => {
+      try {
+        const response = await fetch(`/api/beans/${bean.id}`, {
+          method: "PATCH",
+          body: buildBeanUpdatePayload(overrides),
+        });
+
+        const result = (await response.json()) as {
+          data?: BeanRecord;
+          error?: string;
+        };
+
+        if (!response.ok || !result.data) {
+          setActionError(result.error ?? "Unable to update this bean.");
+          return;
+        }
+
+        setCurrentBean(result.data);
+        setFormValues(getBeanFormValues(result.data));
+        setNoteDraft(result.data.comments ?? "");
+      } catch {
+        setActionError("Network error while updating this bean. Please try again.");
+      }
+    });
+  }
+
+  function handleNotesSave() {
+    const nextComments = noteDraft.trim();
+
+    if ((currentBean.comments ?? "") === nextComments) {
+      setIsNotesEditing(!nextComments);
+      return;
+    }
+
+    saveBeanDetails({
+      comments: nextComments,
+    });
+    setIsNotesEditing(!nextComments);
+  }
+
+  function handleNotesKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleNotesSave();
+    }
+  }
+
+  function handleRatingChange(nextRating: number) {
+    saveBeanDetails({
+      rating: nextRating,
+    });
+  }
+
+  function handleShareClick() {
+    setIsShareTooltipVisible(true);
+
+    if (shareTooltipTimeoutRef.current) {
+      clearTimeout(shareTooltipTimeoutRef.current);
+    }
+
+    shareTooltipTimeoutRef.current = setTimeout(() => {
+      setIsShareTooltipVisible(false);
+    }, 1800);
   }
 
   async function handleUpdate(event: FormEvent<HTMLFormElement>) {
@@ -333,8 +428,38 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
               {messages.addedOn} {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
             </p>
           </div>
-          <div className="whitespace-nowrap rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
-            {currentBean.rating.toFixed(1)} / 5.0
+          <div className="flex items-start gap-2">
+            <div className="whitespace-nowrap rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
+              {currentBean.rating > 0 ? `${currentBean.rating.toFixed(1)} / 5.0` : "Unrated"}
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={handleShareClick}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted transition hover:bg-white/65 hover:text-accent"
+                aria-label="Sharing coming soon"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                  <path d="M12 16V4" />
+                  <path d="m8 8 4-4 4 4" />
+                </svg>
+              </button>
+              {isShareTooltipVisible ? (
+                <div className="absolute right-0 top-10 z-10 whitespace-nowrap rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-muted shadow-[0_12px_24px_rgba(76,44,23,0.12)]">
+                  Sharing coming soon
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -393,6 +518,11 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
             <span>{messages.priceTrendLow}</span>
             <span>{messages.priceTrendHigh}</span>
           </div>
+          <p className="mt-2 text-xs leading-5 text-muted">
+            {priceStats.savedBeanCount > 1
+              ? `Compared to My beans — avg €${priceStats.averageSavedUnitPrice.toFixed(3)}/g`
+              : "Add more beans to compare prices"}
+          </p>
         </div>
 
         <div className="rounded-2xl border border-line bg-card p-4">
@@ -400,7 +530,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
             {messages.recommendedLabel}
           </p>
           <div className="mt-4 space-y-3">
-            {roastMatches.map((drink) => (
+            {visibleRoastMatches.map((drink) => (
               <div
                 key={`${currentBean.id}-${drink.name}`}
                 className="rounded-2xl border border-dashed border-line bg-white/55 px-4 py-3"
@@ -410,12 +540,96 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
               </div>
             ))}
           </div>
+          {!isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setIsRecommendationsExpanded(true)}
+              className="mt-3 text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
+            >
+              + {hiddenRoastMatchCount} more drinks
+            </button>
+          ) : null}
+          {isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setIsRecommendationsExpanded(false)}
+              className="mt-3 text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
+            >
+              Hide extra drinks
+            </button>
+          ) : null}
         </div>
 
-        <div className="flex flex-1 flex-col rounded-2xl border border-dashed border-line bg-white/50 p-4">
-          <p className="max-h-[8.75rem] overflow-y-auto pr-1 text-sm leading-7 text-muted">
-            {currentBean.comments || messages.noComments}
-          </p>
+        <div className="space-y-3">
+          <div className="group relative flex min-h-[60px] w-full flex-col rounded-2xl border border-dashed border-line bg-white/50 p-4">
+            {isNotesEditing || !currentBean.comments ? (
+              <textarea
+                className="min-h-[60px] w-full resize-none bg-transparent text-[13px] leading-6 text-muted outline-none placeholder:text-muted"
+                placeholder="Add your tasting notes after brewing..."
+                value={noteDraft}
+                onChange={(event) => setNoteDraft(event.target.value)}
+                onBlur={handleNotesSave}
+                onKeyDown={handleNotesKeyDown}
+                disabled={isPending}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsNotesEditing(true)}
+                className="min-h-[60px] w-full pr-8 text-left text-[13px] leading-6 text-muted"
+              >
+                {currentBean.comments}
+              </button>
+            )}
+            {currentBean.comments && !isNotesEditing ? (
+              <button
+                type="button"
+                onClick={() => setIsNotesEditing(true)}
+                className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/75 text-muted opacity-0 transition group-hover:opacity-100 hover:text-accent"
+                aria-label="Edit tasting notes"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1" aria-label="Rate after brewing">
+              {[1, 2, 3, 4, 5].map((ratingValue) => {
+                const isFilled = currentBean.rating >= ratingValue;
+
+                return (
+                  <button
+                    key={ratingValue}
+                    type="button"
+                    onClick={() => handleRatingChange(ratingValue)}
+                    className={`text-xl leading-none transition ${
+                      isFilled ? "text-accent" : "text-muted/45 hover:text-accent"
+                    }`}
+                    aria-label={`Rate ${ratingValue} out of 5`}
+                    disabled={isPending}
+                  >
+                    ★
+                  </button>
+                );
+              })}
+            </div>
+            {currentBean.rating <= 0 ? (
+              <p className="mt-1 text-[13px] text-muted">Rate after your first brew</p>
+            ) : null}
+          </div>
         </div>
 
         {actionError ? (
@@ -443,7 +657,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
             type="button"
             onClick={handleDelete}
             disabled={isPending}
-            className="inline-flex flex-1 items-center justify-center rounded-full bg-[#7b2d1d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#622112] disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex flex-1 items-center justify-center rounded-full border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? messages.working : messages.delete}
           </button>

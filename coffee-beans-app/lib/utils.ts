@@ -5,6 +5,7 @@ const DEFAULT_WEIGHT_GRAMS = 250;
 
 export type BeanRecord = {
   id: string;
+  slug: string;
   brand: string;
   price: number;
   quantity: number;
@@ -17,6 +18,14 @@ export type BeanRecord = {
   updatedAt: string;
 };
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("de-DE", {
     style: "currency",
@@ -27,6 +36,7 @@ export function formatCurrency(value: number) {
 export function formatBeanRecord(bean: CoffeeBean): BeanRecord {
   return {
     id: bean.id,
+    slug: `${slugify(bean.brand) || "coffee-bean"}-${bean.createdAt.toISOString().slice(0, 7)}-${bean.id.slice(-6)}`,
     brand: bean.brand,
     price: Number(bean.price),
     quantity: bean.quantity,

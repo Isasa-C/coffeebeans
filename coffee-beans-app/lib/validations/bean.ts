@@ -32,7 +32,7 @@ const baseBeanSchema = z.object({
     .max(10000, "Weight is too large."),
   rating: z.coerce
     .number({ invalid_type_error: "Rating is required." })
-    .min(1, "Rating must be at least 1.")
+    .min(0, "Rating must be at least 0.")
     .max(5, "Rating must be 5 or lower."),
   bestFor: z.enum(bestForOptions, {
     errorMap: () => ({

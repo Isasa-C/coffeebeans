@@ -67,7 +67,7 @@ export function BeanFormFields({
         <FieldError message={fieldErrors.brand?.[0]} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-2 block text-sm font-semibold" htmlFor="price">
             {messages.price}
@@ -104,24 +104,6 @@ export function BeanFormFields({
           <FieldError message={fieldErrors.weight?.[0]} />
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="rating">
-            {messages.rating}
-          </label>
-          <input
-            id="rating"
-            name="rating"
-            type="number"
-            min="1"
-            max="5"
-            step="0.1"
-            className="field"
-            placeholder="4.0"
-            value={formValues.rating}
-            onChange={onChange}
-          />
-          <FieldError message={fieldErrors.rating?.[0]} />
-        </div>
       </div>
 
       <div>

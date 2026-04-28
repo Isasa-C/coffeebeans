@@ -66,9 +66,10 @@ type GuideCopy = {
 
 const pillClassNames = {
   light: "bg-[#EAF3DE] text-[#3B6D11]",
-  "medium-light": "bg-[#FAEEDA] text-[#854F0B]",
+  "medium-light": "bg-[#EAF3DE] text-[#3B6D11]",
   medium: "bg-[#FAC775] text-[#633806]",
   "medium-dark": "bg-[#F5C4B3] text-[#993C1D]",
+  dark: "bg-[#F0997B] text-[#712B13]",
 };
 
 const roastSwatches = ["#F5E6C8", "#D4A96A", "#9C6B3C", "#5C3D1E", "#1E1007"];
@@ -88,9 +89,9 @@ const guideCopy: Record<Language, GuideCopy> = {
     heroTitle: "Coffee bean guide",
     heroSubtitle: "Understand roast levels, flavour profiles, and which drinks each roast works best with.",
     tabs: [
-      { key: "roasts", label: "Bean roast types" },
+      { key: "roasts", label: "Roast types" },
       { key: "drinks", label: "Popular drinks" },
-      { key: "match", label: "Quick roast match" },
+      { key: "match", label: "Drink recipes" },
     ],
     roastsSectionLabel: "Bean roast types",
     drinksSectionLabel: "Popular drinks",
@@ -113,29 +114,29 @@ const guideCopy: Record<Language, GuideCopy> = {
       { drink: "Pour-over", roastLabel: "Light / Medium-light", pillClassName: pillClassNames.light, recipe: "15g coffee + 250ml water" },
       { drink: "Cold brew", roastLabel: "Light / Medium-light", pillClassName: pillClassNames.light, recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)" },
       { drink: "Orange / coconut coffee", roastLabel: "Light / Medium-light", pillClassName: pillClassNames.light, recipe: "36g espresso + 100-150ml juice or coconut water" },
-      { drink: "Americano", roastLabel: "Medium / Dark", pillClassName: pillClassNames.medium, recipe: "36g espresso + 150-250ml water" },
-      { drink: "Latte", roastLabel: "Medium / Medium-dark", pillClassName: pillClassNames.medium, recipe: "36g espresso + 180-240ml milk" },
-      { drink: "Flat white", roastLabel: "Medium / Medium-dark", pillClassName: pillClassNames.medium, recipe: "36g espresso + 120-160ml milk" },
+      { drink: "Americano", roastLabel: "Medium / Dark", pillClassName: pillClassNames.dark, recipe: "36g espresso + 150-250ml water" },
+      { drink: "Latte", roastLabel: "Medium / Medium-dark", pillClassName: pillClassNames["medium-dark"], recipe: "36g espresso + 180-240ml milk" },
+      { drink: "Flat white", roastLabel: "Medium / Medium-dark", pillClassName: pillClassNames["medium-dark"], recipe: "36g espresso + 120-160ml milk" },
       { drink: "Dirty", roastLabel: "Medium", pillClassName: pillClassNames.medium, recipe: "36g espresso + 150-200ml cold milk" },
       { drink: "Cappuccino", roastLabel: "Medium-dark", pillClassName: pillClassNames["medium-dark"], recipe: "36g espresso + 120-150ml milk (thick foam)" },
-      { drink: "Espresso", roastLabel: "Medium-dark / Dark", pillClassName: pillClassNames["medium-dark"], recipe: "36g espresso" },
+      { drink: "Espresso", roastLabel: "Medium-dark / Dark", pillClassName: pillClassNames.dark, recipe: "36g espresso" },
       { drink: "Vanilla / Hazelnut / Mocha", roastLabel: "Medium-dark", pillClassName: pillClassNames["medium-dark"], recipe: "36g espresso + milk + 10-20g syrup" },
     ],
     espressoGroupLabel: "Espresso",
     americanoGroupLabel: "Americano",
     latteGroupLabel: "Latte",
     espressoCards: {
-      hot: { name: "Hot espresso", recipe: "36g espresso", roastLabel: "Medium-dark to dark", pillClassName: pillClassNames["medium-dark"], taste: "Strong, bold" },
-      iced: { name: "Iced espresso", recipe: "36g espresso over ice", roastLabel: "Medium-dark to dark", pillClassName: pillClassNames["medium-dark"], taste: "Sharp, refreshing" },
+      hot: { name: "Hot espresso", recipe: "36g espresso", roastLabel: "Medium-dark to dark", pillClassName: pillClassNames.dark, taste: "Strong, bold" },
+      iced: { name: "Iced espresso", recipe: "36g espresso over ice", roastLabel: "Medium-dark to dark", pillClassName: pillClassNames.dark, taste: "Sharp, refreshing" },
     },
     americanoCards: {
-      hot: { name: "Hot americano", recipe: "36g espresso + 150-250ml hot water", roastLabel: "Medium to dark", pillClassName: pillClassNames.medium, taste: "Smooth, light" },
-      iced: { name: "Iced americano", recipe: "Ice + 36g espresso + 150-250ml cold water", roastLabel: "Medium to dark", pillClassName: pillClassNames.medium, taste: "Clean, refreshing" },
+      hot: { name: "Hot americano", recipe: "36g espresso + 150-250ml hot water", roastLabel: "Medium to dark", pillClassName: pillClassNames.dark, taste: "Smooth, light" },
+      iced: { name: "Iced americano", recipe: "Ice + 36g espresso + 150-250ml cold water", roastLabel: "Medium to dark", pillClassName: pillClassNames.dark, taste: "Clean, refreshing" },
     },
     latteCards: {
       regular: {
-        hot: { name: "Hot latte", recipe: "36g espresso + 180-240ml milk + microfoam", roastLabel: "Medium to medium-dark", pillClassName: pillClassNames.medium, taste: "Creamy, balanced" },
-        iced: { name: "Iced latte", recipe: "Ice + 36g espresso + 180-240ml cold milk", roastLabel: "Medium to medium-dark", pillClassName: pillClassNames.medium, taste: "Smooth, milky" },
+        hot: { name: "Hot latte", recipe: "36g espresso + 180-240ml milk + microfoam", roastLabel: "Medium to medium-dark", pillClassName: pillClassNames["medium-dark"], taste: "Creamy, balanced" },
+        iced: { name: "Iced latte", recipe: "Ice + 36g espresso + 180-240ml cold milk", roastLabel: "Medium to medium-dark", pillClassName: pillClassNames["medium-dark"], taste: "Smooth, milky" },
       },
       oat: {
         hot: { name: "Hot oat latte", recipe: "36g espresso + 180-240ml oat milk + microfoam", roastLabel: "Medium", pillClassName: pillClassNames.medium, taste: "Creamy, slightly sweet, nutty" },
@@ -182,29 +183,29 @@ const guideCopy: Record<Language, GuideCopy> = {
       { drink: "Pour-over", roastLabel: "Clair / Clair-moyen", pillClassName: pillClassNames.light, recipe: "15g de cafe + 250ml d'eau" },
       { drink: "Cold brew", roastLabel: "Clair / Clair-moyen", pillClassName: pillClassNames.light, recipe: "Ratio 1:8 (par exemple 50g de cafe + 400ml d'eau, infusion 12-18h)" },
       { drink: "Cafe orange / coco", roastLabel: "Clair / Clair-moyen", pillClassName: pillClassNames.light, recipe: "36g d'espresso + 100-150ml de jus ou d'eau de coco" },
-      { drink: "Americano", roastLabel: "Moyen / Fonce", pillClassName: pillClassNames.medium, recipe: "36g d'espresso + 150-250ml d'eau" },
-      { drink: "Latte", roastLabel: "Moyen / Moyen-fonce", pillClassName: pillClassNames.medium, recipe: "36g d'espresso + 180-240ml de lait" },
-      { drink: "Flat white", roastLabel: "Moyen / Moyen-fonce", pillClassName: pillClassNames.medium, recipe: "36g d'espresso + 120-160ml de lait" },
+      { drink: "Americano", roastLabel: "Moyen / Fonce", pillClassName: pillClassNames.dark, recipe: "36g d'espresso + 150-250ml d'eau" },
+      { drink: "Latte", roastLabel: "Moyen / Moyen-fonce", pillClassName: pillClassNames["medium-dark"], recipe: "36g d'espresso + 180-240ml de lait" },
+      { drink: "Flat white", roastLabel: "Moyen / Moyen-fonce", pillClassName: pillClassNames["medium-dark"], recipe: "36g d'espresso + 120-160ml de lait" },
       { drink: "Dirty", roastLabel: "Moyen", pillClassName: pillClassNames.medium, recipe: "36g d'espresso + 150-200ml de lait froid" },
       { drink: "Cappuccino", roastLabel: "Moyen-fonce", pillClassName: pillClassNames["medium-dark"], recipe: "36g d'espresso + 120-150ml de lait (mousse epaisse)" },
-      { drink: "Espresso", roastLabel: "Moyen-fonce / Fonce", pillClassName: pillClassNames["medium-dark"], recipe: "36g d'espresso" },
+      { drink: "Espresso", roastLabel: "Moyen-fonce / Fonce", pillClassName: pillClassNames.dark, recipe: "36g d'espresso" },
       { drink: "Vanille / Noisette / Mocha", roastLabel: "Moyen-fonce", pillClassName: pillClassNames["medium-dark"], recipe: "36g d'espresso + lait + 10-20g de sirop" },
     ],
     espressoGroupLabel: "Espresso",
     americanoGroupLabel: "Americano",
     latteGroupLabel: "Latte",
     espressoCards: {
-      hot: { name: "Espresso chaud", recipe: "36g d'espresso", roastLabel: "Moyen-fonce a fonce", pillClassName: pillClassNames["medium-dark"], taste: "Fort, intense" },
-      iced: { name: "Espresso glace", recipe: "36g d'espresso sur glace", roastLabel: "Moyen-fonce a fonce", pillClassName: pillClassNames["medium-dark"], taste: "Vif, rafraichissant" },
+      hot: { name: "Espresso chaud", recipe: "36g d'espresso", roastLabel: "Moyen-fonce a fonce", pillClassName: pillClassNames.dark, taste: "Fort, intense" },
+      iced: { name: "Espresso glace", recipe: "36g d'espresso sur glace", roastLabel: "Moyen-fonce a fonce", pillClassName: pillClassNames.dark, taste: "Vif, rafraichissant" },
     },
     americanoCards: {
-      hot: { name: "Americano chaud", recipe: "36g d'espresso + 150-250ml d'eau chaude", roastLabel: "Moyen a fonce", pillClassName: pillClassNames.medium, taste: "Doux, leger" },
-      iced: { name: "Americano glace", recipe: "Glace + 36g d'espresso + 150-250ml d'eau froide", roastLabel: "Moyen a fonce", pillClassName: pillClassNames.medium, taste: "Net, rafraichissant" },
+      hot: { name: "Americano chaud", recipe: "36g d'espresso + 150-250ml d'eau chaude", roastLabel: "Moyen a fonce", pillClassName: pillClassNames.dark, taste: "Doux, leger" },
+      iced: { name: "Americano glace", recipe: "Glace + 36g d'espresso + 150-250ml d'eau froide", roastLabel: "Moyen a fonce", pillClassName: pillClassNames.dark, taste: "Net, rafraichissant" },
     },
     latteCards: {
       regular: {
-        hot: { name: "Latte chaud", recipe: "36g d'espresso + 180-240ml de lait + micro-mousse", roastLabel: "Moyen a moyen-fonce", pillClassName: pillClassNames.medium, taste: "Cremé, equilibre" },
-        iced: { name: "Latte glace", recipe: "Glace + 36g d'espresso + 180-240ml de lait froid", roastLabel: "Moyen a moyen-fonce", pillClassName: pillClassNames.medium, taste: "Doux, lacte" },
+        hot: { name: "Latte chaud", recipe: "36g d'espresso + 180-240ml de lait + micro-mousse", roastLabel: "Moyen a moyen-fonce", pillClassName: pillClassNames["medium-dark"], taste: "Cremé, equilibre" },
+        iced: { name: "Latte glace", recipe: "Glace + 36g d'espresso + 180-240ml de lait froid", roastLabel: "Moyen a moyen-fonce", pillClassName: pillClassNames["medium-dark"], taste: "Doux, lacte" },
       },
       oat: {
         hot: { name: "Latte avoine chaud", recipe: "36g d'espresso + 180-240ml de lait d'avoine + micro-mousse", roastLabel: "Moyen", pillClassName: pillClassNames.medium, taste: "Cremé, legerement sucre, note de noix" },
@@ -251,29 +252,29 @@ const guideCopy: Record<Language, GuideCopy> = {
       { drink: "푸어오버", roastLabel: "라이트 / 미디엄-라이트", pillClassName: pillClassNames.light, recipe: "원두 15g + 물 250ml" },
       { drink: "콜드브루", roastLabel: "라이트 / 미디엄-라이트", pillClassName: pillClassNames.light, recipe: "1:8 비율 (예: 원두 50g + 물 400ml, 12-18시간 추출)" },
       { drink: "오렌지 / 코코넛 커피", roastLabel: "라이트 / 미디엄-라이트", pillClassName: pillClassNames.light, recipe: "에스프레소 36g + 주스 또는 코코넛 워터 100-150ml" },
-      { drink: "아메리카노", roastLabel: "미디엄 / 다크", pillClassName: pillClassNames.medium, recipe: "에스프레소 36g + 물 150-250ml" },
-      { drink: "라테", roastLabel: "미디엄 / 미디엄-다크", pillClassName: pillClassNames.medium, recipe: "에스프레소 36g + 우유 180-240ml" },
-      { drink: "플랫화이트", roastLabel: "미디엄 / 미디엄-다크", pillClassName: pillClassNames.medium, recipe: "에스프레소 36g + 우유 120-160ml" },
+      { drink: "아메리카노", roastLabel: "미디엄 / 다크", pillClassName: pillClassNames.dark, recipe: "에스프레소 36g + 물 150-250ml" },
+      { drink: "라테", roastLabel: "미디엄 / 미디엄-다크", pillClassName: pillClassNames["medium-dark"], recipe: "에스프레소 36g + 우유 180-240ml" },
+      { drink: "플랫화이트", roastLabel: "미디엄 / 미디엄-다크", pillClassName: pillClassNames["medium-dark"], recipe: "에스프레소 36g + 우유 120-160ml" },
       { drink: "더티", roastLabel: "미디엄", pillClassName: pillClassNames.medium, recipe: "에스프레소 36g + 차가운 우유 150-200ml" },
       { drink: "카푸치노", roastLabel: "미디엄-다크", pillClassName: pillClassNames["medium-dark"], recipe: "에스프레소 36g + 우유 120-150ml (두꺼운 거품)" },
-      { drink: "에스프레소", roastLabel: "미디엄-다크 / 다크", pillClassName: pillClassNames["medium-dark"], recipe: "에스프레소 36g" },
+      { drink: "에스프레소", roastLabel: "미디엄-다크 / 다크", pillClassName: pillClassNames.dark, recipe: "에스프레소 36g" },
       { drink: "바닐라 / 헤이즐넛 / 모카", roastLabel: "미디엄-다크", pillClassName: pillClassNames["medium-dark"], recipe: "에스프레소 36g + 우유 + 시럽 10-20g" },
     ],
     espressoGroupLabel: "에스프레소",
     americanoGroupLabel: "아메리카노",
     latteGroupLabel: "라테",
     espressoCards: {
-      hot: { name: "따뜻한 에스프레소", recipe: "에스프레소 36g", roastLabel: "미디엄-다크 ~ 다크", pillClassName: pillClassNames["medium-dark"], taste: "강하고 진한 맛" },
-      iced: { name: "아이스 에스프레소", recipe: "얼음 위에 에스프레소 36g", roastLabel: "미디엄-다크 ~ 다크", pillClassName: pillClassNames["medium-dark"], taste: "선명하고 산뜻한 맛" },
+      hot: { name: "따뜻한 에스프레소", recipe: "에스프레소 36g", roastLabel: "미디엄-다크 ~ 다크", pillClassName: pillClassNames.dark, taste: "강하고 진한 맛" },
+      iced: { name: "아이스 에스프레소", recipe: "얼음 위에 에스프레소 36g", roastLabel: "미디엄-다크 ~ 다크", pillClassName: pillClassNames.dark, taste: "선명하고 산뜻한 맛" },
     },
     americanoCards: {
-      hot: { name: "따뜻한 아메리카노", recipe: "에스프레소 36g + 뜨거운 물 150-250ml", roastLabel: "미디엄 ~ 다크", pillClassName: pillClassNames.medium, taste: "부드럽고 가벼운 맛" },
-      iced: { name: "아이스 아메리카노", recipe: "얼음 + 에스프레소 36g + 찬물 150-250ml", roastLabel: "미디엄 ~ 다크", pillClassName: pillClassNames.medium, taste: "깔끔하고 시원한 맛" },
+      hot: { name: "따뜻한 아메리카노", recipe: "에스프레소 36g + 뜨거운 물 150-250ml", roastLabel: "미디엄 ~ 다크", pillClassName: pillClassNames.dark, taste: "부드럽고 가벼운 맛" },
+      iced: { name: "아이스 아메리카노", recipe: "얼음 + 에스프레소 36g + 찬물 150-250ml", roastLabel: "미디엄 ~ 다크", pillClassName: pillClassNames.dark, taste: "깔끔하고 시원한 맛" },
     },
     latteCards: {
       regular: {
-        hot: { name: "따뜻한 라테", recipe: "에스프레소 36g + 우유 180-240ml + 마이크로폼", roastLabel: "미디엄 ~ 미디엄-다크", pillClassName: pillClassNames.medium, taste: "크리미하고 균형 잡힌 맛" },
-        iced: { name: "아이스 라테", recipe: "얼음 + 에스프레소 36g + 차가운 우유 180-240ml", roastLabel: "미디엄 ~ 미디엄-다크", pillClassName: pillClassNames.medium, taste: "부드럽고 밀키한 맛" },
+        hot: { name: "따뜻한 라테", recipe: "에스프레소 36g + 우유 180-240ml + 마이크로폼", roastLabel: "미디엄 ~ 미디엄-다크", pillClassName: pillClassNames["medium-dark"], taste: "크리미하고 균형 잡힌 맛" },
+        iced: { name: "아이스 라테", recipe: "얼음 + 에스프레소 36g + 차가운 우유 180-240ml", roastLabel: "미디엄 ~ 미디엄-다크", pillClassName: pillClassNames["medium-dark"], taste: "부드럽고 밀키한 맛" },
       },
       oat: {
         hot: { name: "따뜻한 오트 라테", recipe: "에스프레소 36g + 오트 밀크 180-240ml + 마이크로폼", roastLabel: "미디엄", pillClassName: pillClassNames.medium, taste: "크리미하고 약간 달며 고소한 맛" },
@@ -293,6 +294,19 @@ function TabPill({ label, className }: { label: string; className: string }) {
   );
 }
 
+function formatTasteDescriptor(taste: string, language: Language) {
+  return language === "en" ? taste.replace(", ", " and ") : taste;
+}
+
+function TasteNote({ taste, language }: { taste: string; language: Language }) {
+  return (
+    <p className="mt-1.5 text-sm text-[#8a8076]">
+      <span className="font-medium text-[#2f241c]">Taste:</span>{" "}
+      {formatTasteDescriptor(taste, language)}
+    </p>
+  );
+}
+
 function SegmentedToggle({
   options,
   value,
@@ -305,7 +319,7 @@ function SegmentedToggle({
   small?: boolean;
 }) {
   return (
-    <div className="inline-flex overflow-hidden rounded-[8px] border-[0.5px] border-[rgba(47,36,28,0.16)]">
+    <div className="inline-flex w-fit overflow-hidden rounded-[8px] border-[0.5px] border-[rgba(47,36,28,0.16)]">
       {options.map((option, index) => {
         const isActive = option.value === value;
 
@@ -314,11 +328,11 @@ function SegmentedToggle({
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`border-r-[0.5px] border-[rgba(47,36,28,0.16)] px-3 py-2 transition last:border-r-0 ${
-              small ? "text-xs" : "text-sm"
+            className={`w-auto flex-none border-r-[0.5px] border-[rgba(47,36,28,0.16)] px-3 py-2 transition last:border-r-0 ${
+              small ? "text-sm" : "text-sm"
             } ${
               isActive
-                ? "bg-[#eee8df] font-medium text-[#2f241c]"
+                ? "bg-[rgba(138,75,42,0.13)] font-medium text-accent"
                 : "bg-transparent font-normal text-[#8a8076]"
             } ${index === 0 ? "" : ""}`}
           >
@@ -375,7 +389,11 @@ export function CoffeeGuidePreview() {
   );
 }
 
-export function CoffeeGuideSection() {
+export function CoffeeGuideSection({
+  onAddBeanClick,
+}: {
+  onAddBeanClick?: () => void;
+}) {
   const { language } = useLanguage();
   const copy = guideCopy[language];
   const [activeTab, setActiveTab] = useState<TabKey>("roasts");
@@ -389,14 +407,14 @@ export function CoffeeGuideSection() {
 
   return (
     <section
-      className="scroll-mt-24 rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-6 py-8 font-sans sm:px-8"
+      className="scroll-mt-24 py-8 font-sans"
       id="coffee-guide"
     >
       <div className="max-w-3xl">
         <div className="mb-4">
-          <h1 className="text-3xl font-semibold text-[#2f241c] sm:text-4xl">
-            {copy.heroTitle}
-          </h1>
+          <p className="text-base leading-8 text-[#6e5a49]">
+            {copy.heroSubtitle}
+          </p>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -410,8 +428,8 @@ export function CoffeeGuideSection() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`rounded-[8px] border-[0.5px] px-4 py-2.5 text-sm transition ${
                   isActive
-                    ? "border-[rgba(47,36,28,0.28)] bg-[#eee8df] font-medium text-[#2f241c]"
-                    : "border-[rgba(47,36,28,0.12)] bg-white font-normal text-[#6e5a49] hover:bg-[#faf7f2]"
+                    ? "border-transparent bg-accent font-medium text-white"
+                    : "border-[rgba(47,36,28,0.12)] bg-transparent font-normal text-[#6e5a49] hover:bg-[#f7f4ef]"
                 }`}
               >
                 {tab.label}
@@ -423,107 +441,121 @@ export function CoffeeGuideSection() {
 
       <div className="mt-8">
         <div className={activeTab === "roasts" ? "block" : "hidden"}>
-          <div className="space-y-4">
-            {copy.roastCards.map((roast) => (
-              <article
-                key={roast.name}
-                className="flex items-start gap-4 rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4"
-              >
-                <span
-                  className="mt-1 h-10 w-10 shrink-0 rounded-full border-[0.5px] border-[rgba(47,36,28,0.08)]"
-                  style={{ backgroundColor: roast.swatch }}
-                />
-                <div className="space-y-2">
-                  <h3 className="text-base font-medium text-[#2f241c]">{roast.name}</h3>
-                  <p className="text-sm leading-7 text-[#6e5a49]">{roast.notes}</p>
-                  <p className="text-sm text-[#2f241c]">{roast.bestFor}</p>
-                </div>
-              </article>
-            ))}
+          <div className="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+            {copy.roastCards.map((roast) => {
+              const [bestForLabel, ...bestForDetails] = roast.bestFor.split(":");
+              const bestForText = bestForDetails.join(":").trim();
+
+              return (
+                <article
+                  key={roast.name}
+                  className="flex h-full min-h-[280px] flex-col justify-between rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4"
+                >
+                  <div className="flex-1 space-y-2">
+                    <span
+                      className="block h-10 w-10 rounded-full border-[0.5px] border-[rgba(47,36,28,0.08)]"
+                      style={{ backgroundColor: roast.swatch }}
+                    />
+                    <h3 className="min-h-12 text-base font-medium leading-6 text-[#2f241c]">{roast.name}</h3>
+                    <p className="text-[13px] font-normal leading-7 text-[#6e5a49]">{roast.notes}</p>
+                  </div>
+                  <p className="mt-auto pt-3 text-[13px] leading-6 text-[#6e5a49]">
+                    <span className="font-medium text-[#2f241c]">{bestForLabel}:</span>{" "}
+                    {bestForText}
+                  </p>
+                </article>
+              );
+            })}
           </div>
         </div>
 
         <div className={activeTab === "drinks" ? "block" : "hidden"}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
-            <div>
+          <div className="grid auto-rows-fr grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
+            <div className="flex h-full flex-col">
               <p className="mb-2 text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
                 {copy.espressoGroupLabel}
               </p>
-              <article className="rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
-                <SegmentedToggle
-                  options={[
-                    { label: copy.toggles.hot, value: "hot" },
-                    { label: copy.toggles.iced, value: "iced" },
-                  ]}
-                  value={espressoTemperature}
-                  onChange={(value) => setEspressoTemperature(value as Temperature)}
-                />
-                <div className="mt-4">
-                  <h3 className="text-base font-semibold text-[#2f241c]">{espressoCard.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#6e5a49]">{espressoCard.recipe}</p>
-                  <div className="mt-4">
-                    <TabPill label={espressoCard.roastLabel} className={espressoCard.pillClassName} />
+              <article className="flex h-[300px] flex-1 flex-col justify-between rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
+                <div className="flex flex-1 flex-col">
+                  <div className="min-h-[5.125rem]">
+                    <SegmentedToggle
+                      options={[
+                        { label: copy.toggles.hot, value: "hot" },
+                        { label: copy.toggles.iced, value: "iced" },
+                      ]}
+                      value={espressoTemperature}
+                      onChange={(value) => setEspressoTemperature(value as Temperature)}
+                    />
                   </div>
-                  <p className="mt-3 text-sm text-[#8a8076]">{espressoCard.taste}</p>
+                  <h3 className="mt-4 min-h-12 text-base font-semibold leading-6 text-[#2f241c]">{espressoCard.name}</h3>
+                  <p className="mt-2 min-h-12 text-sm leading-6 text-[#6e5a49]">{espressoCard.recipe}</p>
+                </div>
+                <div>
+                  <TabPill label={espressoCard.roastLabel} className={espressoCard.pillClassName} />
+                  <TasteNote taste={espressoCard.taste} language={language} />
                 </div>
               </article>
             </div>
 
-            <div>
+            <div className="flex h-full flex-col">
               <p className="mb-2 text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
                 {copy.americanoGroupLabel}
               </p>
-              <article className="rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
-                <SegmentedToggle
-                  options={[
-                    { label: copy.toggles.hot, value: "hot" },
-                    { label: copy.toggles.iced, value: "iced" },
-                  ]}
-                  value={americanoTemperature}
-                  onChange={(value) => setAmericanoTemperature(value as Temperature)}
-                />
-                <div className="mt-4">
-                  <h3 className="text-base font-semibold text-[#2f241c]">{americanoCard.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#6e5a49]">{americanoCard.recipe}</p>
-                  <div className="mt-4">
-                    <TabPill label={americanoCard.roastLabel} className={americanoCard.pillClassName} />
+              <article className="flex h-[300px] flex-1 flex-col justify-between rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
+                <div className="flex flex-1 flex-col">
+                  <div className="min-h-[5.125rem]">
+                    <SegmentedToggle
+                      options={[
+                        { label: copy.toggles.hot, value: "hot" },
+                        { label: copy.toggles.iced, value: "iced" },
+                      ]}
+                      value={americanoTemperature}
+                      onChange={(value) => setAmericanoTemperature(value as Temperature)}
+                    />
                   </div>
-                  <p className="mt-3 text-sm text-[#8a8076]">{americanoCard.taste}</p>
+                  <h3 className="mt-4 min-h-12 text-base font-semibold leading-6 text-[#2f241c]">{americanoCard.name}</h3>
+                  <p className="mt-2 min-h-12 text-sm leading-6 text-[#6e5a49]">{americanoCard.recipe}</p>
+                </div>
+                <div>
+                  <TabPill label={americanoCard.roastLabel} className={americanoCard.pillClassName} />
+                  <TasteNote taste={americanoCard.taste} language={language} />
                 </div>
               </article>
             </div>
 
-            <div>
+            <div className="flex h-full flex-col">
               <p className="mb-2 text-xs font-medium tracking-[0.2em] text-[#8a8076] uppercase">
                 {copy.latteGroupLabel}
               </p>
-              <article className="rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
-                <SegmentedToggle
-                  options={[
-                    { label: copy.toggles.hot, value: "hot" },
-                    { label: copy.toggles.iced, value: "iced" },
-                  ]}
-                  value={latteTemperature}
-                  onChange={(value) => setLatteTemperature(value as Temperature)}
-                />
-                <div className="mt-3">
-                  <SegmentedToggle
-                  options={[
-                      { label: copy.toggles.regularMilk, value: "regular" },
-                      { label: copy.toggles.oatMilk, value: "oat" },
-                    ]}
-                    value={latteMilkType}
-                    onChange={(value) => setLatteMilkType(value as MilkType)}
-                    small
-                  />
-                </div>
-                <div className="mt-4">
-                  <h3 className="text-base font-semibold text-[#2f241c]">{latteCard.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#6e5a49]">{latteCard.recipe}</p>
-                  <div className="mt-4">
-                    <TabPill label={latteCard.roastLabel} className={latteCard.pillClassName} />
+              <article className="flex h-[300px] flex-1 flex-col justify-between rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4">
+                <div className="flex flex-1 flex-col">
+                  <div className="min-h-[5.125rem]">
+                    <SegmentedToggle
+                      options={[
+                        { label: copy.toggles.hot, value: "hot" },
+                        { label: copy.toggles.iced, value: "iced" },
+                      ]}
+                      value={latteTemperature}
+                      onChange={(value) => setLatteTemperature(value as Temperature)}
+                    />
+                    <div className="mt-3">
+                      <SegmentedToggle
+                        options={[
+                          { label: copy.toggles.regularMilk, value: "regular" },
+                          { label: copy.toggles.oatMilk, value: "oat" },
+                        ]}
+                        value={latteMilkType}
+                        onChange={(value) => setLatteMilkType(value as MilkType)}
+                        small
+                      />
+                    </div>
                   </div>
-                  <p className="mt-3 text-sm text-[#8a8076]">{latteCard.taste}</p>
+                  <h3 className="mt-4 min-h-12 text-base font-semibold leading-6 text-[#2f241c]">{latteCard.name}</h3>
+                  <p className="mt-2 min-h-12 text-sm leading-6 text-[#6e5a49]">{latteCard.recipe}</p>
+                </div>
+                <div>
+                  <TabPill label={latteCard.roastLabel} className={latteCard.pillClassName} />
+                  <TasteNote taste={latteCard.taste} language={language} />
                 </div>
               </article>
             </div>
@@ -531,23 +563,52 @@ export function CoffeeGuideSection() {
         </div>
 
         <div className={activeTab === "match" ? "block" : "hidden"}>
-          <div>
+          <div className="grid auto-rows-fr grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
             {copy.matchRows.map((row) => (
-              <div
+              <article
                 key={row.drink}
-                className="grid grid-cols-[1fr_auto] items-center gap-4 border-b-[0.5px] border-[rgba(47,36,28,0.12)] py-3 first:pt-0 last:border-b-0 last:pb-0"
+                className="h-full rounded-[12px] border-[0.5px] border-[rgba(47,36,28,0.12)] bg-white px-5 py-4"
               >
-                <div>
-                  <p className="text-base font-medium text-[#2f241c]">{row.drink}</p>
-                  <p className="mt-1 text-xs leading-5 text-[#a19386]">
-                    {copy.recipeLabel}: {row.recipe}
-                  </p>
+                <div className="flex min-h-full flex-col justify-between gap-4">
+                  <div>
+                    <h3 className="min-h-12 text-base font-semibold leading-6 text-[#2f241c]">{row.drink}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#6e5a49]">
+                      {copy.recipeLabel}: {row.recipe}
+                    </p>
+                  </div>
+                  <div>
+                    <TabPill label={row.roastLabel} className={row.pillClassName} />
+                  </div>
                 </div>
-                <TabPill label={row.roastLabel} className={row.pillClassName} />
-              </div>
+              </article>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="pt-8 text-center">
+        <p className="text-lg font-semibold text-[#2f241c]">
+          Ready to log your first bean?
+        </p>
+        <p className="mt-2 text-sm leading-7 text-[#6e5a49]">
+          Add it to your collection and see what to brew with it.
+        </p>
+        {onAddBeanClick ? (
+          <button
+            type="button"
+            onClick={onAddBeanClick}
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong sm:w-auto"
+          >
+            Add a bean
+          </button>
+        ) : (
+          <a
+            href="#add-bean"
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong sm:w-auto"
+          >
+            Add a bean
+          </a>
+        )}
       </div>
     </section>
   );

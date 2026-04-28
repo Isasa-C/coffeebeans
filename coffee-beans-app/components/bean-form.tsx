@@ -13,7 +13,7 @@ import { initialBeanFormValues } from "@/lib/bean-form";
 import { type BeanFormErrors } from "@/lib/validations/bean";
 import { BeanFormFields } from "./bean-form-fields";
 
-export function BeanForm() {
+export function BeanForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter();
   const { messages } = useLanguage();
   const [isPending, startTransition] = useTransition();
@@ -106,6 +106,7 @@ export function BeanForm() {
         }
 
         router.refresh();
+        onSuccess?.();
       } catch {
         setSubmitError(messages.networkSaveError);
       }

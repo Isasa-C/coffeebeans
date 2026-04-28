@@ -8,15 +8,18 @@ import { EmptyState } from "./empty-state";
 
 type BeanCardGridProps = {
   beans: BeanRecord[];
+  onAddBeanClick?: () => void;
 };
 
 type SortOption = "newest" | "oldest" | "priceHigh" | "priceLow";
 
-export function BeanCardGrid({ beans }: BeanCardGridProps) {
+export function BeanCardGrid({ beans, onAddBeanClick }: BeanCardGridProps) {
   const { messages } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedRoast, setSelectedRoast] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const shouldShowFilters = beans.length >= 7;
+  const isFilteringActive = selectedBrand !== "all" || selectedRoast !== "all";
 
   const brandOptions = Array.from(new Set(beans.map((bean) => bean.brand))).sort(
     (left, right) => left.localeCompare(right),
@@ -54,19 +57,25 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
     visiblePrices.length > 0
       ? visiblePrices.reduce((sum, price) => sum + price, 0) / visiblePrices.length
       : 0;
+  const savedUnitPrices = beans.map((bean) => {
+    const safeWeight = bean.weight > 0 ? bean.weight : 250;
+
+    return bean.price / safeWeight;
+  });
+  const averageSavedUnitPrice =
+    savedUnitPrices.length > 0
+      ? savedUnitPrices.reduce((sum, price) => sum + price, 0) / savedUnitPrices.length
+      : 0;
 
   if (beans.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onAddBeanClick={onAddBeanClick} />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 rounded-[1.75rem] border border-line bg-card/85 p-4 sm:p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold tracking-[0.22em] text-accent uppercase">
-              {messages.catalog}
-            </p>
             <h2 className="display-font text-3xl font-semibold">
               {messages.savedBeans}
             </h2>
@@ -74,76 +83,106 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
               {messages.catalogDescription}
             </p>
           </div>
-          <p className="text-sm text-muted">
-            {filteredBeans.length} {filteredBeans.length === 1 ? messages.entryShown : messages.entriesShown}
-          </p>
+          {!shouldShowFilters ? (
+            <div className="flex flex-row items-center justify-end gap-3">
+              <label
+                className="whitespace-nowrap text-[13px] font-semibold text-foreground"
+                htmlFor="sortFilter"
+              >
+                {messages.sortBy}
+              </label>
+              <select
+                id="sortFilter"
+                className="field w-auto appearance-none"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOption)}
+              >
+                <option value="newest">{messages.newestFirst}</option>
+                <option value="oldest">{messages.oldestFirst}</option>
+                <option value="priceHigh">{messages.priceHighToLow}</option>
+                <option value="priceLow">{messages.priceLowToHigh}</option>
+              </select>
+              {isFilteringActive ? (
+                <p className="whitespace-nowrap text-[13px] text-muted">
+                  {filteredBeans.length} of {beans.length} results
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <label
-              className="mb-2 block text-sm font-semibold text-foreground"
-              htmlFor="brandFilter"
-            >
-              {messages.filterByBrand}
-            </label>
-            <select
-              id="brandFilter"
-              className="field appearance-none"
-              value={selectedBrand}
-              onChange={(event) => setSelectedBrand(event.target.value)}
-            >
-              <option value="all">{messages.allBrands}</option>
-              {brandOptions.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
-                </option>
-              ))}
-            </select>
-          </div>
+        {shouldShowFilters ? (
+          <div className="grid items-center gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
+            <div>
+              <label
+                className="mb-2 block text-sm font-semibold text-foreground"
+                htmlFor="brandFilter"
+              >
+                {messages.filterByBrand}
+              </label>
+              <select
+                id="brandFilter"
+                className="field appearance-none"
+                value={selectedBrand}
+                onChange={(event) => setSelectedBrand(event.target.value)}
+              >
+                <option value="all">{messages.allBrands}</option>
+                {brandOptions.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label
-              className="mb-2 block text-sm font-semibold text-foreground"
-              htmlFor="roastFilter"
-            >
-              {messages.filterByRoast}
-            </label>
-            <select
-              id="roastFilter"
-              className="field appearance-none"
-              value={selectedRoast}
-              onChange={(event) => setSelectedRoast(event.target.value)}
-            >
-              <option value="all">{messages.allRoasts}</option>
-              {roastOptions.map((roast) => (
-                <option key={roast} value={roast}>
-                  {messages.bestForOptions[roast as keyof typeof messages.bestForOptions] ?? roast}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label
+                className="mb-2 block text-sm font-semibold text-foreground"
+                htmlFor="roastFilter"
+              >
+                {messages.filterByRoast}
+              </label>
+              <select
+                id="roastFilter"
+                className="field appearance-none"
+                value={selectedRoast}
+                onChange={(event) => setSelectedRoast(event.target.value)}
+              >
+                <option value="all">{messages.allRoasts}</option>
+                {roastOptions.map((roast) => (
+                  <option key={roast} value={roast}>
+                    {messages.bestForOptions[roast as keyof typeof messages.bestForOptions] ?? roast}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label
-              className="mb-2 block text-sm font-semibold text-foreground"
-              htmlFor="sortFilter"
-            >
-              {messages.sortBy}
-            </label>
-            <select
-              id="sortFilter"
-              className="field appearance-none"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-            >
-              <option value="newest">{messages.newestFirst}</option>
-              <option value="oldest">{messages.oldestFirst}</option>
-              <option value="priceHigh">{messages.priceHighToLow}</option>
-              <option value="priceLow">{messages.priceLowToHigh}</option>
-            </select>
+            <div>
+              <label
+                className="mb-2 block text-sm font-semibold text-foreground"
+                htmlFor="sortFilter"
+              >
+                {messages.sortBy}
+              </label>
+              <select
+                id="sortFilter"
+                className="field appearance-none"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOption)}
+              >
+                <option value="newest">{messages.newestFirst}</option>
+                <option value="oldest">{messages.oldestFirst}</option>
+                <option value="priceHigh">{messages.priceHighToLow}</option>
+                <option value="priceLow">{messages.priceLowToHigh}</option>
+              </select>
+            </div>
+            {isFilteringActive ? (
+              <p className="text-[13px] text-muted sm:ml-auto sm:self-center">
+                {filteredBeans.length} of {beans.length} results
+              </p>
+            ) : null}
           </div>
-        </div>
+        ) : null}
       </div>
 
       {sortedBeans.length === 0 ? (
@@ -169,6 +208,8 @@ export function BeanCardGrid({ beans }: BeanCardGridProps) {
                   min: minPrice,
                   max: maxPrice,
                   average: averagePrice,
+                  savedBeanCount: beans.length,
+                  averageSavedUnitPrice,
                 }}
               />
             </div>

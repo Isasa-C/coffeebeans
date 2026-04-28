@@ -7,7 +7,7 @@ export const initialBeanFormValues = {
   price: "",
   quantity: "1",
   weight: DEFAULT_WEIGHT_GRAMS.toString(),
-  rating: "4",
+  rating: "0",
   bestFor: "Medium",
   comments: "",
 };
