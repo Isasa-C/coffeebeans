@@ -76,10 +76,10 @@ export function BeanCardGrid({ beans, onAddBeanClick }: BeanCardGridProps) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="display-font text-3xl font-semibold">
+            <h2 className="font-serif text-3xl font-normal">
               {messages.savedBeans}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
               {messages.catalogDescription}
             </p>
           </div>

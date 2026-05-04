@@ -1,17 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5efe5;
-  --foreground: #2f241c;
-  --surface: rgba(255, 250, 243, 0.9);
-  --surface-strong: #fffaf3;
-  --line: rgba(97, 68, 44, 0.16);
-  --accent: #8a4b2a;
-  --accent-strong: #6f3519;
-  --muted: #6e5a49;
+  --bg: #faf8f5;
+  --card: #ffffff;
+  --text: #2f241c;
+  --muted: #735d4d;
+  --accent: #d4673e;
+  --border: rgba(97, 68, 44, 0.12);
+  --background: var(--bg);
+  --foreground: var(--text);
+  --surface: rgba(255, 250, 242, 0.9);
+  --surface-strong: var(--card);
+  --line: var(--border);
+  --accent-strong: #b35530;
   --shadow: 0 24px 80px rgba(76, 44, 23, 0.12);
   --font-body:
-    "Avenir Next", "Segoe UI", "Helvetica Neue", "Nimbus Sans", sans-serif;
+    Inter, "Avenir Next", "Segoe UI", "Helvetica Neue", "Nimbus Sans", sans-serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
 }
 
 @theme inline {
@@ -38,10 +43,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
-  background-image:
-    radial-gradient(circle at top left, rgba(201, 147, 95, 0.28), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(140, 78, 42, 0.18), transparent 28%),
-    linear-gradient(180deg, #fbf6ef 0%, #f3eadf 100%);
+  background-image: none;
 }
 
 a {
@@ -69,8 +71,8 @@ textarea {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.07) 25%, transparent 25%);
   background-size: 24px 24px;
   opacity: 0.2;
 }
@@ -114,6 +116,10 @@ textarea {
 .page-shell {
   width: min(1180px, calc(100vw - 2rem));
   margin: 0 auto;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
 }
 
 .display-font {

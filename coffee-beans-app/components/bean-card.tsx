@@ -2,6 +2,7 @@
 
 import {
   ChangeEvent,
+  CSSProperties,
   FormEvent,
   KeyboardEvent,
   useRef,
@@ -59,16 +60,16 @@ const roastDrinkMatches: Record<
   ],
 };
 
-export function BeanCard({ bean, priceStats }: BeanCardProps) {
+export function BeanCard({ bean }: BeanCardProps) {
   const router = useRouter();
   const { messages } = useLanguage();
   const [currentBean, setCurrentBean] = useState(bean);
   const [isDeleted, setIsDeleted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isNotesEditing, setIsNotesEditing] = useState(!bean.comments);
+  const [isNotesFocused, setIsNotesFocused] = useState(false);
   const [noteDraft, setNoteDraft] = useState(bean.comments ?? "");
   const [isRecommendationsExpanded, setIsRecommendationsExpanded] = useState(false);
-  const [isShareTooltipVisible, setIsShareTooltipVisible] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [formValues, setFormValues] = useState(() => getBeanFormValues(bean));
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -76,24 +77,21 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const shareTooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const priceRange = Math.max(priceStats.max - priceStats.min, 1);
-  const pricePosition = ((currentBean.price - priceStats.min) / priceRange) * 100;
-  const priceDifference = currentBean.price - priceStats.average;
   const safeWeight = currentBean.weight > 0 ? currentBean.weight : 250;
   const unitPrice = currentBean.price / safeWeight;
+  const costPerCup = unitPrice * 15;
   const roastMatches =
     roastDrinkMatches[currentBean.bestFor] ?? roastDrinkMatches.Medium;
   const visibleRoastMatches = isRecommendationsExpanded
     ? roastMatches
-    : roastMatches.slice(0, 2);
-  const hiddenRoastMatchCount = Math.max(roastMatches.length - 2, 0);
-  const priceTrendLabel =
-    Math.abs(priceDifference) < 0.5
-      ? messages.priceTrendAverage
-      : priceDifference > 0
-        ? messages.priceTrendAboveAverage
-        : messages.priceTrendBelowAverage;
+    : roastMatches.slice(0, 3);
+  const hiddenRoastMatchCount = Math.max(roastMatches.length - 3, 0);
+  const hasCustomImage =
+    Boolean(currentBean.imageUrl) && currentBean.imageUrl !== "/default-bean.png";
+  const detailCellStyle: CSSProperties = {
+    borderColor: "var(--color-border-tertiary, var(--line))",
+    borderWidth: "0.5px",
+  };
 
   function handleChange(
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -211,6 +209,7 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
       comments: nextComments,
     });
     setIsNotesEditing(!nextComments);
+    setIsNotesFocused(false);
   }
 
   function handleNotesKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -218,24 +217,6 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
       event.preventDefault();
       handleNotesSave();
     }
-  }
-
-  function handleRatingChange(nextRating: number) {
-    saveBeanDetails({
-      rating: nextRating,
-    });
-  }
-
-  function handleShareClick() {
-    setIsShareTooltipVisible(true);
-
-    if (shareTooltipTimeoutRef.current) {
-      clearTimeout(shareTooltipTimeoutRef.current);
-    }
-
-    shareTooltipTimeoutRef.current = setTimeout(() => {
-      setIsShareTooltipVisible(false);
-    }, 1800);
   }
 
   async function handleUpdate(event: FormEvent<HTMLFormElement>) {
@@ -407,229 +388,141 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
 
   return (
     <article className="card-surface flex h-full flex-col overflow-hidden rounded-[1.75rem]">
-      <div className="bg-[#f1e4d3] p-4">
-        <div className="relative mx-auto aspect-square max-w-[240px] overflow-hidden rounded-[1.25rem] border border-line bg-[#e7d6c4]">
-          <div className="absolute inset-5">
+      <div className="h-[260px] w-full overflow-hidden bg-[#f0ebe4] sm:h-[300px]">
+        {hasCustomImage ? (
+          <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentBean.imageUrl}
               alt={`${currentBean.brand} ${messages.savedBeans}`}
-              className="h-full w-full object-contain transition duration-500 hover:scale-[1.03]"
+              className="h-full w-full object-contain"
               loading="lazy"
             />
+          </>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <svg
+              aria-hidden="true"
+              className="h-10 w-10 text-muted/55"
+              fill="currentColor"
+              viewBox="0 0 48 48"
+            >
+              <path d="M31.7 5.8c7.5 3.5 9.4 14.7 4.2 25.1-5.2 10.3-15.5 15.9-23 12.4S3.5 28.6 8.7 18.2C13.9 7.9 24.2 2.3 31.7 5.8Zm-1.4 3c-4.9 5.8-6.8 11.3-5.8 16.7.8 4.5-.3 8.8-3.5 12.9 4.4-1.8 8.7-5.8 11.8-11.9 4.4-8.8 3.3-17.1-2.5-17.7Z" />
+            </svg>
           </div>
-        </div>
+        )}
       </div>
-      <div className="flex flex-1 flex-col space-y-5 p-5">
-        <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-          <div className="min-h-[4.25rem] space-y-1">
-            <h3 className="display-font text-2xl font-semibold">{currentBean.brand}</h3>
-            <p className="text-sm text-muted">
-              {messages.addedOn} {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="whitespace-nowrap rounded-full bg-[rgba(138,75,42,0.1)] px-3 py-1 text-sm font-semibold text-accent">
-              {currentBean.rating > 0 ? `${currentBean.rating.toFixed(1)} / 5.0` : "Unrated"}
-            </div>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={handleShareClick}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted transition hover:bg-white/65 hover:text-accent"
-                aria-label="Sharing coming soon"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-                  <path d="M12 16V4" />
-                  <path d="m8 8 4-4 4 4" />
-                </svg>
-              </button>
-              {isShareTooltipVisible ? (
-                <div className="absolute right-0 top-10 z-10 whitespace-nowrap rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-muted shadow-[0_12px_24px_rgba(76,44,23,0.12)]">
-                  Sharing coming soon
-                </div>
-              ) : null}
-            </div>
-          </div>
+      <div className="flex flex-1 flex-col gap-5 p-5 font-sans">
+        <div>
+          <h3
+            className="text-[20px] leading-7 font-normal text-[#3b2416]"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+          >
+            {currentBean.brand}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-muted">
+            {messages.addedOn}{" "}
+            {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
+          </p>
         </div>
 
-        <dl className="grid grid-cols-3 gap-3 text-sm">
-          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">{messages.priceLabel}</dt>
-            <dd className="mt-1 text-base font-semibold text-foreground">
-              {new Intl.NumberFormat(messages.locale, {
-                style: "currency",
-                currency: "EUR",
-              }).format(currentBean.price)}
-            </dd>
+        <dl className="text-sm">
+          <div className="grid grid-cols-3">
+            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
+              <dt className="text-[11px] leading-4 text-muted">{messages.priceLabel}</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                {new Intl.NumberFormat(messages.locale, {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(currentBean.price)}
+              </dd>
+            </div>
+            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
+              <dt className="text-[11px] leading-4 text-muted">{messages.weightLabel}</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                {safeWeight} g
+              </dd>
+            </div>
+            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
+              <dt className="text-[11px] leading-4 text-muted">{messages.roastLabel}</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
+              </dd>
+            </div>
           </div>
-          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">{messages.weightLabel}</dt>
-            <dd className="mt-1 text-base font-semibold text-foreground">
-              {safeWeight} g
-            </dd>
-          </div>
-          <div className="flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-line bg-card p-3">
-            <dt className="text-muted">{messages.roastLabel}</dt>
-            <dd className="mt-1 text-base font-semibold text-foreground">
-              {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
-            </dd>
+          <div className="grid grid-cols-2">
+            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
+              <dt className="text-[11px] leading-4 text-muted">{messages.unitPriceLabel}</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                {new Intl.NumberFormat(messages.locale, {
+                  style: "currency",
+                  currency: "EUR",
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 3,
+                }).format(unitPrice)}
+                /g
+              </dd>
+            </div>
+            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
+              <dt className="text-[11px] leading-4 text-muted">Cost per cup</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                {new Intl.NumberFormat(messages.locale, {
+                  style: "currency",
+                  currency: "EUR",
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(costPerCup)}
+              </dd>
+            </div>
           </div>
         </dl>
 
-        <div className="rounded-2xl border border-line bg-card p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-foreground">
-              {messages.priceTrend}
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-muted uppercase">
+            Good for
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="min-w-0 flex-1 truncate text-[13px] leading-5 text-[#3b2416]">
+              {visibleRoastMatches.map((drink) => drink.name).join(" · ")}
             </p>
-            <span className="rounded-full bg-[rgba(138,75,42,0.12)] px-3 py-1 text-xs font-semibold text-accent">
-              {priceTrendLabel}
-            </span>
+            {!isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIsRecommendationsExpanded(true)}
+                className="shrink-0 text-[13px] font-semibold text-muted transition hover:underline hover:underline-offset-4"
+              >
+                + {hiddenRoastMatchCount} more
+              </button>
+            ) : null}
           </div>
-          <div className="mt-3 text-sm text-muted">
-            {messages.unitPriceLabel}{" "}
-            <span className="font-semibold text-foreground">
-              {new Intl.NumberFormat(messages.locale, {
-                style: "currency",
-                currency: "EUR",
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 3,
-              }).format(unitPrice)}
-              /g
-            </span>
-          </div>
-          <div className="mt-4 h-2 rounded-full bg-[rgba(138,75,42,0.12)]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#b97b4f] to-[#5c3520]"
-              style={{ width: `${Math.min(Math.max(pricePosition, 8), 100)}%` }}
+        </div>
+
+        <div className="group relative flex min-h-[76px] w-full flex-col rounded-xl border border-dashed border-line px-3 py-2.5">
+          {isNotesEditing || !currentBean.comments ? (
+            <textarea
+              className={`w-full resize-none bg-transparent text-[13px] leading-6 text-muted outline-none transition-[height] duration-200 ease-in-out placeholder:text-muted ${
+                isNotesFocused ? "h-[100px]" : "h-[44px]"
+              }`}
+              placeholder="Add your notes after brewing..."
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              onFocus={() => setIsNotesFocused(true)}
+              onBlur={handleNotesSave}
+              onKeyDown={handleNotesKeyDown}
+              disabled={isPending}
             />
-          </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-muted">
-            <span>{messages.priceTrendLow}</span>
-            <span>{messages.priceTrendHigh}</span>
-          </div>
-          <p className="mt-2 text-xs leading-5 text-muted">
-            {priceStats.savedBeanCount > 1
-              ? `Compared to My beans — avg €${priceStats.averageSavedUnitPrice.toFixed(3)}/g`
-              : "Add more beans to compare prices"}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-line bg-card p-4">
-          <p className="text-sm font-semibold text-foreground">
-            {messages.recommendedLabel}
-          </p>
-          <div className="mt-4 space-y-3">
-            {visibleRoastMatches.map((drink) => (
-              <div
-                key={`${currentBean.id}-${drink.name}`}
-                className="rounded-2xl border border-dashed border-line bg-white/55 px-4 py-3"
-              >
-                <p className="text-sm font-semibold text-foreground">{drink.name}</p>
-                <p className="mt-1 text-sm leading-6 text-muted">{drink.recipe}</p>
-              </div>
-            ))}
-          </div>
-          {!isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
+          ) : (
             <button
               type="button"
-              onClick={() => setIsRecommendationsExpanded(true)}
-              className="mt-3 text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
+              onClick={() => {
+                setIsNotesEditing(true);
+                setIsNotesFocused(true);
+              }}
+              className="min-h-[44px] w-full text-left text-[13px] leading-6 text-muted"
             >
-              + {hiddenRoastMatchCount} more drinks
+              {currentBean.comments}
             </button>
-          ) : null}
-          {isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setIsRecommendationsExpanded(false)}
-              className="mt-3 text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
-            >
-              Hide extra drinks
-            </button>
-          ) : null}
-        </div>
-
-        <div className="space-y-3">
-          <div className="group relative flex min-h-[60px] w-full flex-col rounded-2xl border border-dashed border-line bg-white/50 p-4">
-            {isNotesEditing || !currentBean.comments ? (
-              <textarea
-                className="min-h-[60px] w-full resize-none bg-transparent text-[13px] leading-6 text-muted outline-none placeholder:text-muted"
-                placeholder="Add your tasting notes after brewing..."
-                value={noteDraft}
-                onChange={(event) => setNoteDraft(event.target.value)}
-                onBlur={handleNotesSave}
-                onKeyDown={handleNotesKeyDown}
-                disabled={isPending}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsNotesEditing(true)}
-                className="min-h-[60px] w-full pr-8 text-left text-[13px] leading-6 text-muted"
-              >
-                {currentBean.comments}
-              </button>
-            )}
-            {currentBean.comments && !isNotesEditing ? (
-              <button
-                type="button"
-                onClick={() => setIsNotesEditing(true)}
-                className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/75 text-muted opacity-0 transition group-hover:opacity-100 hover:text-accent"
-                aria-label="Edit tasting notes"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                </svg>
-              </button>
-            ) : null}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1" aria-label="Rate after brewing">
-              {[1, 2, 3, 4, 5].map((ratingValue) => {
-                const isFilled = currentBean.rating >= ratingValue;
-
-                return (
-                  <button
-                    key={ratingValue}
-                    type="button"
-                    onClick={() => handleRatingChange(ratingValue)}
-                    className={`text-xl leading-none transition ${
-                      isFilled ? "text-accent" : "text-muted/45 hover:text-accent"
-                    }`}
-                    aria-label={`Rate ${ratingValue} out of 5`}
-                    disabled={isPending}
-                  >
-                    ★
-                  </button>
-                );
-              })}
-            </div>
-            {currentBean.rating <= 0 ? (
-              <p className="mt-1 text-[13px] text-muted">Rate after your first brew</p>
-            ) : null}
-          </div>
+          )}
         </div>
 
         {actionError ? (
@@ -644,20 +537,32 @@ export function BeanCard({ bean, priceStats }: BeanCardProps) {
           </div>
         ) : null}
 
-        <div className="mt-auto flex gap-3">
+        <div
+          className="mt-auto grid grid-cols-3 pt-3"
+          style={{
+            borderTop: "0.5px solid var(--color-border-tertiary, var(--line))",
+          }}
+        >
           <button
             type="button"
             onClick={handleStartEdit}
             disabled={isPending}
-            className="inline-flex flex-1 items-center justify-center rounded-full border border-line px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-white/65 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-[#5d4636] transition hover:text-accent disabled:cursor-not-allowed disabled:opacity-70"
           >
             {messages.edit}
           </button>
           <button
             type="button"
+            onClick={() => setIsRecommendationsExpanded((current) => !current)}
+            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-[#5d4636] transition hover:text-accent"
+          >
+            Recipes
+          </button>
+          <button
+            type="button"
             onClick={handleDelete}
             disabled={isPending}
-            className="inline-flex flex-1 items-center justify-center rounded-full border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-red-700/75 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? messages.working : messages.delete}
           </button>

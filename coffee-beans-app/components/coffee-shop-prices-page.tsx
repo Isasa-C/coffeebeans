@@ -13,7 +13,6 @@ import {
 } from "recharts";
 import { AddCoffeeShopOrderForm } from "@/components/add-coffee-shop-order-form";
 import { useLanguage } from "@/components/language-provider";
-import { ScrollToTopButton } from "@/components/scroll-to-top-button";
 import {
   coffeeShopPriceData,
   type CoffeeShopPriceEntry,
@@ -191,7 +190,7 @@ function formatDate(date: string, locale: string) {
   });
 }
 
-export function CoffeeShopPricesPage() {
+export function CoffeeShopPricesPage({ embedded = false }: { embedded?: boolean }) {
   const { language, setLanguage, messages, languageOptions } = useLanguage();
   const copy = messages.coffeePrices;
   const defaultDateTo = getTodayDateString();
@@ -464,34 +463,29 @@ export function CoffeeShopPricesPage() {
   }
 
   return (
-    <main className="grain min-h-screen py-8 sm:py-12">
-      <div className="page-shell space-y-7 sm:space-y-8">
-        <div className="card-surface relative overflow-hidden rounded-[2.1rem] px-6 py-6 sm:px-8 sm:py-7">
-          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-[#d89a6e]/18 via-transparent to-[#8f5734]/10" />
-          <div className="relative flex flex-col gap-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-4">
-                <Link
-                  href="/"
-                  className="inline-flex text-sm font-semibold text-accent underline decoration-2 underline-offset-4 transition hover:text-accent-strong"
-                >
-                  ← My Beans
-                </Link>
-                <div className="space-y-3">
-                  <h1 className="display-font text-4xl font-semibold text-accent sm:text-5xl">
-                    {copy.title}
-                  </h1>
-                  <p className="max-w-3xl text-base leading-8 text-muted">
-                    {copy.subtitle}
-                  </p>
-                </div>
-
-              </div>
-            </div>
-
+    <main className={embedded ? "py-8 sm:py-10" : "grain min-h-screen py-8 sm:py-12"}>
+      <div className={embedded ? "space-y-8" : "page-shell space-y-7 sm:space-y-8"}>
+        <header className="mx-auto max-w-[1200px] border-b border-line px-5 pb-8 sm:px-8">
+          {!embedded ? (
+            <Link
+              href="/"
+              className="mb-6 inline-flex text-sm font-semibold text-accent underline decoration-2 underline-offset-4 transition hover:text-accent-strong"
+            >
+              ← My Beans
+            </Link>
+          ) : null}
+          <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9b7b62]">
+            Trends
           </div>
-        </div>
+          <h1 className="mb-4 font-serif text-[44px] font-normal leading-none tracking-[-0.02em] text-foreground sm:text-[64px]">
+            {copy.title}
+          </h1>
+          <p className="max-w-[60ch] text-base leading-7 text-muted">
+            {copy.subtitle}
+          </p>
+        </header>
 
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
         <div className="min-h-[520px]">
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             {heroLinks.map((item) => (
@@ -1108,6 +1102,8 @@ export function CoffeeShopPricesPage() {
             </section>
           ) : null}
         </div>
+        </div>
+        {!embedded ? (
         <footer className="card-surface flex flex-col gap-4 rounded-[1.75rem] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/case-study"
@@ -1134,8 +1130,8 @@ export function CoffeeShopPricesPage() {
             </select>
           </div>
         </footer>
+        ) : null}
       </div>
-      <ScrollToTopButton />
     </main>
   );
 }
