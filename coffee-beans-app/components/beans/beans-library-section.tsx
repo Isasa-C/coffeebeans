@@ -36,10 +36,11 @@ function SectionHeader({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
           Library
         </p>
-        <h1 className="mt-3 font-serif text-[44px] font-normal leading-none tracking-[-0.02em] text-foreground sm:text-[64px]">
+        <h1 className="mt-3 font-serif text-[44px] font-medium leading-none tracking-[-1.5px] text-foreground sm:text-[56px]">
           My beans
         </h1>
-        <p className="mt-4 max-w-xl text-base leading-7 text-muted">
+        <span className="my-4 block h-0.5 w-10 bg-foreground" aria-hidden />
+        <p className="max-w-[60ch] text-[15px] leading-7 text-muted">
           Every bean you&apos;ve bought, with what you paid, your tasting notes, and how you rated it.
         </p>
       </div>

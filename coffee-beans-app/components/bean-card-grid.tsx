@@ -13,6 +13,25 @@ type BeanCardGridProps = {
 
 type SortOption = "newest" | "oldest" | "priceHigh" | "priceLow";
 
+function calculatePriceContext(beans: BeanRecord[]) {
+  if (beans.length === 0) {
+    return null;
+  }
+
+  const unitPrices = beans.map((bean) => {
+    const safeWeight = bean.weight > 0 ? bean.weight : 250;
+
+    return bean.price / safeWeight;
+  });
+  const min = Math.min(...unitPrices);
+  const max = Math.max(...unitPrices);
+  const avg =
+    unitPrices.reduce((sum, unitPrice) => sum + unitPrice, 0) /
+    unitPrices.length;
+
+  return { min, max, avg };
+}
+
 export function BeanCardGrid({ beans, onAddBeanClick }: BeanCardGridProps) {
   const { messages } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -50,22 +69,7 @@ export function BeanCardGrid({ beans, onAddBeanClick }: BeanCardGridProps) {
 
     return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
   });
-  const visiblePrices = sortedBeans.map((bean) => bean.price);
-  const minPrice = visiblePrices.length > 0 ? Math.min(...visiblePrices) : 0;
-  const maxPrice = visiblePrices.length > 0 ? Math.max(...visiblePrices) : 0;
-  const averagePrice =
-    visiblePrices.length > 0
-      ? visiblePrices.reduce((sum, price) => sum + price, 0) / visiblePrices.length
-      : 0;
-  const savedUnitPrices = beans.map((bean) => {
-    const safeWeight = bean.weight > 0 ? bean.weight : 250;
-
-    return bean.price / safeWeight;
-  });
-  const averageSavedUnitPrice =
-    savedUnitPrices.length > 0
-      ? savedUnitPrices.reduce((sum, price) => sum + price, 0) / savedUnitPrices.length
-      : 0;
+  const priceContext = calculatePriceContext(beans);
 
   if (beans.length === 0) {
     return <EmptyState onAddBeanClick={onAddBeanClick} />;
@@ -204,13 +208,7 @@ export function BeanCardGrid({ beans, onAddBeanClick }: BeanCardGridProps) {
             >
               <BeanCard
                 bean={bean}
-                priceStats={{
-                  min: minPrice,
-                  max: maxPrice,
-                  average: averagePrice,
-                  savedBeanCount: beans.length,
-                  averageSavedUnitPrice,
-                }}
+                priceContext={priceContext}
               />
             </div>
           ))}

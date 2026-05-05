@@ -80,14 +80,11 @@ function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
 
   if (view === "beans") {
     return (
-      <>
-        <BeansLibrarySection
-          beans={catalog}
-          onAddBeanClick={onAddBean}
-          onGuideClick={() => onNavigate("guide")}
-        />
-        <CoffeeCalendarSection beans={catalog} />
-      </>
+      <BeansLibrarySection
+        beans={catalog}
+        onAddBeanClick={onAddBean}
+        onGuideClick={() => onNavigate("guide")}
+      />
     );
   }
 
@@ -96,7 +93,12 @@ function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
   }
 
   if (view === "today") {
-    return <DailyOverview />;
+    return (
+      <>
+        <DailyOverview />
+        <CoffeeCalendarSection beans={catalog} />
+      </>
+    );
   }
 
   if (view === "prices") {

@@ -1,31 +1,21 @@
 "use client";
 
-import {
-  ChangeEvent,
-  CSSProperties,
-  FormEvent,
-  KeyboardEvent,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { type KeyboardEvent, useState } from "react";
 import { useLanguage } from "@/components/language-provider";
-import { useRouter } from "next/navigation";
-import { getBeanFormValues } from "@/lib/bean-form";
 import { type BeanRecord } from "@/lib/utils";
-import { type BeanUpdateErrors } from "@/lib/validations/bean";
-import { BeanFormFields } from "./bean-form-fields";
 
 type BeanCardProps = {
   bean: BeanRecord;
-  priceStats: {
-    min: number;
-    max: number;
-    average: number;
-    savedBeanCount: number;
-    averageSavedUnitPrice: number;
-  };
+  priceContext: PriceContext | null;
 };
+
+type PriceContext = {
+  min: number;
+  max: number;
+  avg: number;
+};
+
+type PriceLabel = "Low" | "Average" | "High" | "Unique";
 
 const roastDrinkMatches: Record<
   string,
@@ -33,13 +23,25 @@ const roastDrinkMatches: Record<
 > = {
   Light: [
     { name: "Pour-over", recipe: "15g coffee + 250ml water" },
-    { name: "Cold brew", recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)" },
-    { name: "Orange / coconut coffee", recipe: "36g espresso + 100-150ml juice or coconut water" },
+    {
+      name: "Cold brew",
+      recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)",
+    },
+    {
+      name: "Orange / coconut coffee",
+      recipe: "36g espresso + 100-150ml juice or coconut water",
+    },
   ],
   "Medium-Light": [
     { name: "Pour-over", recipe: "15g coffee + 250ml water" },
-    { name: "Cold brew", recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)" },
-    { name: "Orange / coconut coffee", recipe: "36g espresso + 100-150ml juice or coconut water" },
+    {
+      name: "Cold brew",
+      recipe: "1:8 ratio (for example 50g coffee + 400ml water, steep 12-18h)",
+    },
+    {
+      name: "Orange / coconut coffee",
+      recipe: "36g espresso + 100-150ml juice or coconut water",
+    },
   ],
   Medium: [
     { name: "Dirty", recipe: "36g espresso + 150-200ml cold milk" },
@@ -50,8 +52,14 @@ const roastDrinkMatches: Record<
   "Medium-Dark": [
     { name: "Latte", recipe: "36g espresso + 180-240ml milk" },
     { name: "Flat white", recipe: "36g espresso + 120-160ml milk" },
-    { name: "Cappuccino", recipe: "36g espresso + 120-150ml milk (thick foam)" },
-    { name: "Vanilla / hazelnut / mocha", recipe: "36g espresso + milk + 10-20g syrup" },
+    {
+      name: "Cappuccino",
+      recipe: "36g espresso + 120-150ml milk (thick foam)",
+    },
+    {
+      name: "Vanilla / hazelnut / mocha",
+      recipe: "36g espresso + milk + 10-20g syrup",
+    },
     { name: "Espresso", recipe: "36g espresso" },
   ],
   Dark: [
@@ -60,512 +68,292 @@ const roastDrinkMatches: Record<
   ],
 };
 
-export function BeanCard({ bean }: BeanCardProps) {
-  const router = useRouter();
+function getBeanPosition(unitPrice: number, context: PriceContext | null) {
+  if (!context || context.max === context.min) {
+    return 50;
+  }
+
+  return Math.min(
+    Math.max(((unitPrice - context.min) / (context.max - context.min)) * 100, 0),
+    100,
+  );
+}
+
+function getBeanLabel(unitPrice: number, context: PriceContext | null): PriceLabel {
+  if (!context || context.max === context.min) {
+    return "Unique";
+  }
+
+  const range = context.max - context.min;
+
+  if (unitPrice <= context.min + range * 0.33) {
+    return "Low";
+  }
+
+  if (unitPrice >= context.max - range * 0.33) {
+    return "High";
+  }
+
+  return "Average";
+}
+
+function getPriceLabelClass(label: PriceLabel) {
+  if (label === "Low") {
+    return "bg-[#e8efe0] text-[#4a6a30]";
+  }
+
+  if (label === "High") {
+    return "bg-[#f5d8d0] text-[#8a3520]";
+  }
+
+  return "bg-[#f5e6d8] text-[#b35530]";
+}
+
+function getRoastColor(roast: string) {
+  const normalizedRoast = roast.toLowerCase();
+
+  if (normalizedRoast.includes("light") && normalizedRoast.includes("medium")) {
+    return "#b8855a";
+  }
+
+  if (normalizedRoast.includes("light")) {
+    return "#d4a96a";
+  }
+
+  if (normalizedRoast.includes("dark") && normalizedRoast.includes("medium")) {
+    return "#5c3d1e";
+  }
+
+  if (normalizedRoast.includes("dark")) {
+    return "#2a1a10";
+  }
+
+  return "#8c5a3a";
+}
+
+function formatMoney(value: number, locale: string, digits = 2) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
+function formatUnitPrice(value: number, locale: string) {
+  return `${formatMoney(value, locale, 3)}/g`;
+}
+
+function PriceRangeBar({
+  context,
+  label,
+  locale,
+  position,
+  unitPrice,
+}: {
+  context: PriceContext | null;
+  label: PriceLabel;
+  locale: string;
+  position: number;
+  unitPrice: number;
+}) {
+  const minPrice = context?.min ?? unitPrice;
+  const maxPrice = context?.max ?? unitPrice;
+
+  return (
+    <div className="mt-3 rounded-xl border-[0.5px] border-line p-3.5">
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#9b7b62]">
+          Unit price
+        </span>
+        <span className="ml-auto mr-1 font-serif text-base text-foreground">
+          {formatUnitPrice(unitPrice, locale)}
+        </span>
+        <span
+          className={`rounded-full px-2 py-1 text-[11px] font-medium ${getPriceLabelClass(label)}`}
+        >
+          {label}
+        </span>
+      </div>
+
+      <div className="relative mb-2 h-1.5 rounded-full bg-[linear-gradient(to_right,#c5d8b5_0%,#f5e6d8_50%,#f0c5b5_100%)]">
+        <span
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
+          style={{ left: `${position}%` }}
+        />
+      </div>
+
+      <div className="flex justify-between text-[11px] text-[#9b7b62]">
+        <span>Low {formatUnitPrice(minPrice, locale)}</span>
+        <span>High {formatUnitPrice(maxPrice, locale)}</span>
+      </div>
+    </div>
+  );
+}
+
+function RoastBeanIcon({ color }: { color: string }) {
+  return (
+    <span className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+      <svg
+        aria-hidden="true"
+        className="h-[18px] w-[18px]"
+        fill={color}
+        viewBox="0 0 48 48"
+      >
+        <path d="M31.7 5.8c7.5 3.5 9.4 14.7 4.2 25.1-5.2 10.3-15.5 15.9-23 12.4S3.5 28.6 8.7 18.2C13.9 7.9 24.2 2.3 31.7 5.8Zm-1.4 3c-4.9 5.8-6.8 11.3-5.8 16.7.8 4.5-.3 8.8-3.5 12.9 4.4-1.8 8.7-5.8 11.8-11.9 4.4-8.8 3.3-17.1-2.5-17.7Z" />
+      </svg>
+    </span>
+  );
+}
+
+export function BeanCard({ bean, priceContext }: BeanCardProps) {
   const { messages } = useLanguage();
-  const [currentBean, setCurrentBean] = useState(bean);
-  const [isDeleted, setIsDeleted] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isNotesEditing, setIsNotesEditing] = useState(!bean.comments);
-  const [isNotesFocused, setIsNotesFocused] = useState(false);
-  const [noteDraft, setNoteDraft] = useState(bean.comments ?? "");
+  const [isFlipped, setIsFlipped] = useState(false);
   const [isRecommendationsExpanded, setIsRecommendationsExpanded] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [formValues, setFormValues] = useState(() => getBeanFormValues(bean));
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<BeanUpdateErrors>({});
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const safeWeight = currentBean.weight > 0 ? currentBean.weight : 250;
-  const unitPrice = currentBean.price / safeWeight;
-  const costPerCup = unitPrice * 15;
-  const roastMatches =
-    roastDrinkMatches[currentBean.bestFor] ?? roastDrinkMatches.Medium;
+  const safeWeight = bean.weight > 0 ? bean.weight : 250;
+  const unitPrice = bean.price / safeWeight;
+  const pricePosition = getBeanPosition(unitPrice, priceContext);
+  const priceLabel = getBeanLabel(unitPrice, priceContext);
+  const roastMatches = roastDrinkMatches[bean.bestFor] ?? roastDrinkMatches.Medium;
   const visibleRoastMatches = isRecommendationsExpanded
     ? roastMatches
     : roastMatches.slice(0, 3);
   const hiddenRoastMatchCount = Math.max(roastMatches.length - 3, 0);
-  const hasCustomImage =
-    Boolean(currentBean.imageUrl) && currentBean.imageUrl !== "/default-bean.png";
-  const detailCellStyle: CSSProperties = {
-    borderColor: "var(--color-border-tertiary, var(--line))",
-    borderWidth: "0.5px",
-  };
+  const hasCustomImage = Boolean(bean.imageUrl) && bean.imageUrl !== "/default-bean.png";
+  const imageUrl = hasCustomImage ? bean.imageUrl : "/default-bean.png";
+  const roastLabel =
+    messages.bestForOptions[bean.bestFor as keyof typeof messages.bestForOptions] ??
+    bean.bestFor;
+  const roastColor = getRoastColor(bean.bestFor);
 
-  function handleChange(
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = event.target;
-
-    setFormValues((current) => ({
-      ...current,
-      [name]: value,
-    }));
-
-    setFieldErrors((current) => ({
-      ...current,
-      [name]: undefined,
-    }));
+  function toggleFlip() {
+    setIsFlipped((current) => !current);
   }
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null;
-    setImageFile(file);
-    setFieldErrors((current) => ({
-      ...current,
-      image: undefined,
-    }));
-  }
-
-  function handleQuickPickBrand(brand: string) {
-    setFormValues((current) => ({
-      ...current,
-      brand,
-    }));
-    setFieldErrors((current) => ({
-      ...current,
-      brand: undefined,
-    }));
-  }
-
-  function handleStartEdit() {
-    setFormValues(getBeanFormValues(currentBean));
-    setImageFile(null);
-    setFieldErrors({});
-    setActionError(null);
-    setActionMessage(null);
-    setIsEditing(true);
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-  }
-
-  function handleCancelEdit() {
-    setIsEditing(false);
-    setFormValues(getBeanFormValues(currentBean));
-    setImageFile(null);
-    setFieldErrors({});
-    setActionError(null);
-    setActionMessage(null);
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-  }
-
-  function buildBeanUpdatePayload(overrides: Partial<Pick<BeanRecord, "comments" | "rating">>) {
-    const payload = new FormData();
-
-    payload.append("brand", currentBean.brand);
-    payload.append("price", currentBean.price.toString());
-    payload.append("quantity", currentBean.quantity.toString());
-    payload.append("weight", safeWeight.toString());
-    payload.append("rating", (overrides.rating ?? currentBean.rating).toString());
-    payload.append("bestFor", currentBean.bestFor);
-    payload.append("comments", overrides.comments ?? currentBean.comments ?? "");
-
-    return payload;
-  }
-
-  function saveBeanDetails(overrides: Partial<Pick<BeanRecord, "comments" | "rating">>) {
-    setActionError(null);
-    setActionMessage(null);
-
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/beans/${bean.id}`, {
-          method: "PATCH",
-          body: buildBeanUpdatePayload(overrides),
-        });
-
-        const result = (await response.json()) as {
-          data?: BeanRecord;
-          error?: string;
-        };
-
-        if (!response.ok || !result.data) {
-          setActionError(result.error ?? "Unable to update this bean.");
-          return;
-        }
-
-        setCurrentBean(result.data);
-        setFormValues(getBeanFormValues(result.data));
-        setNoteDraft(result.data.comments ?? "");
-      } catch {
-        setActionError("Network error while updating this bean. Please try again.");
-      }
-    });
-  }
-
-  function handleNotesSave() {
-    const nextComments = noteDraft.trim();
-
-    if ((currentBean.comments ?? "") === nextComments) {
-      setIsNotesEditing(!nextComments);
-      return;
-    }
-
-    saveBeanDetails({
-      comments: nextComments,
-    });
-    setIsNotesEditing(!nextComments);
-    setIsNotesFocused(false);
-  }
-
-  function handleNotesKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleNotesSave();
+      toggleFlip();
     }
-  }
-
-  async function handleUpdate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setActionError(null);
-    setActionMessage(null);
-
-    const payload = new FormData();
-    payload.append("brand", formValues.brand);
-    payload.append("price", formValues.price);
-    payload.append("quantity", formValues.quantity);
-    payload.append("weight", formValues.weight);
-    payload.append("rating", formValues.rating);
-    payload.append("bestFor", formValues.bestFor);
-    payload.append("comments", formValues.comments);
-
-    if (imageFile) {
-      payload.append("image", imageFile);
-    }
-
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/beans/${bean.id}`, {
-          method: "PATCH",
-          body: payload,
-        });
-
-        const result = (await response.json()) as {
-          error?: string;
-          fieldErrors?: BeanUpdateErrors;
-          message?: string;
-          data?: BeanRecord;
-        };
-
-        if (!response.ok) {
-          setFieldErrors(result.fieldErrors ?? {});
-          setActionError(result.error ?? messages.updateError);
-          return;
-        }
-
-        if (result.data) {
-          setCurrentBean(result.data);
-          setFormValues(getBeanFormValues(result.data));
-        }
-        setFieldErrors({});
-        setImageFile(null);
-        setActionMessage(result.message ?? messages.updatedMessage);
-        setIsEditing(false);
-        if (imageInputRef.current) {
-          imageInputRef.current.value = "";
-        }
-        router.refresh();
-      } catch {
-        setActionError(messages.updateNetworkError);
-      }
-    });
-  }
-
-  function handleDelete() {
-    setActionError(null);
-    setActionMessage(null);
-
-    const confirmed = window.confirm(
-      messages.deleteConfirm,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/beans/${bean.id}`, {
-          method: "DELETE",
-        });
-
-        const result = (await response.json()) as {
-          error?: string;
-          message?: string;
-        };
-
-        if (!response.ok) {
-          setActionError(result.error ?? messages.deleteError);
-          return;
-        }
-
-        setActionMessage(result.message ?? messages.deletedMessage);
-        setIsDeleted(true);
-        window.setTimeout(() => {
-          router.refresh();
-        }, 700);
-      } catch {
-        setActionError(messages.deleteNetworkError);
-      }
-    });
-  }
-
-  if (isEditing) {
-    return (
-      <article className="card-surface rounded-[1.75rem] p-5">
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
-              {messages.editBean}
-            </p>
-            <h3 className="display-font mt-2 text-2xl font-semibold">
-              {currentBean.brand}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={handleCancelEdit}
-            className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-muted transition hover:bg-white/60"
-          >
-            {messages.cancel}
-          </button>
-        </div>
-
-        <form className="space-y-4" onSubmit={handleUpdate}>
-          <BeanFormFields
-            fieldErrors={fieldErrors}
-            formValues={formValues}
-            imageInputRef={imageInputRef}
-            onChange={handleChange}
-            onImageChange={handleImageChange}
-            onQuickPickBrand={handleQuickPickBrand}
-          />
-
-          {actionError ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {actionError}
-            </div>
-          ) : null}
-
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isPending ? messages.savingChanges : messages.saveChanges}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              disabled={isPending}
-              className="inline-flex items-center justify-center rounded-full border border-line px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white/60 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {messages.close}
-            </button>
-          </div>
-        </form>
-      </article>
-    );
-  }
-
-  if (isDeleted) {
-    return (
-      <article className="card-surface rounded-[1.75rem] px-5 py-8 text-center">
-        <p className="text-sm font-semibold tracking-[0.2em] text-accent uppercase">
-          {messages.beanRemoved}
-        </p>
-        <p className="mt-3 text-sm leading-7 text-muted">
-          {actionMessage ?? messages.deletedMessage}
-        </p>
-      </article>
-    );
   }
 
   return (
-    <article className="card-surface flex h-full flex-col overflow-hidden rounded-[1.75rem]">
-      <div className="h-[260px] w-full overflow-hidden bg-[#f0ebe4] sm:h-[300px]">
-        {hasCustomImage ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentBean.imageUrl}
-              alt={`${currentBean.brand} ${messages.savedBeans}`}
-              className="h-full w-full object-contain"
-              loading="lazy"
-            />
-          </>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <svg
-              aria-hidden="true"
-              className="h-10 w-10 text-muted/55"
-              fill="currentColor"
-              viewBox="0 0 48 48"
-            >
-              <path d="M31.7 5.8c7.5 3.5 9.4 14.7 4.2 25.1-5.2 10.3-15.5 15.9-23 12.4S3.5 28.6 8.7 18.2C13.9 7.9 24.2 2.3 31.7 5.8Zm-1.4 3c-4.9 5.8-6.8 11.3-5.8 16.7.8 4.5-.3 8.8-3.5 12.9 4.4-1.8 8.7-5.8 11.8-11.9 4.4-8.8 3.3-17.1-2.5-17.7Z" />
-            </svg>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-5 p-5 font-sans">
-        <div>
-          <h3
-            className="text-[20px] leading-7 font-normal text-[#3b2416]"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+    <article
+      role="button"
+      tabIndex={0}
+      aria-label={`${bean.brand} - tap to flip`}
+      onClick={toggleFlip}
+      onKeyDown={handleKeyDown}
+      className="group h-full min-h-[560px] cursor-pointer [perspective:1200px]"
+    >
+      <div
+        className={`relative h-full min-h-[560px] w-full rounded-[24px] transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-within:[transform:rotateY(180deg)] ${
+          isFlipped ? "[transform:rotateY(180deg)]" : ""
+        }`}
+      >
+        <div className="absolute inset-0 flex flex-col overflow-hidden rounded-[24px] border-[0.5px] border-line bg-white shadow-[0_12px_40px_rgba(76,44,23,0.08)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
+          <div
+            className="relative basis-4/5 bg-[#f0ebe4] bg-cover bg-center"
+            style={{ backgroundImage: `url(${imageUrl})` }}
           >
-            {currentBean.brand}
-          </h3>
-          <p className="mt-1 text-xs leading-5 text-muted">
-            {messages.addedOn}{" "}
-            {new Date(currentBean.createdAt).toLocaleDateString(messages.locale)}
-          </p>
-        </div>
-
-        <dl className="text-sm">
-          <div className="grid grid-cols-3">
-            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
-              <dt className="text-[11px] leading-4 text-muted">{messages.priceLabel}</dt>
-              <dd className="mt-1 text-[13px] font-semibold text-foreground">
-                {new Intl.NumberFormat(messages.locale, {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(currentBean.price)}
-              </dd>
-            </div>
-            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
-              <dt className="text-[11px] leading-4 text-muted">{messages.weightLabel}</dt>
-              <dd className="mt-1 text-[13px] font-semibold text-foreground">
-                {safeWeight} g
-              </dd>
-            </div>
-            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
-              <dt className="text-[11px] leading-4 text-muted">{messages.roastLabel}</dt>
-              <dd className="mt-1 text-[13px] font-semibold text-foreground">
-                {messages.bestForOptions[currentBean.bestFor as keyof typeof messages.bestForOptions] ?? currentBean.bestFor}
-              </dd>
-            </div>
+            <RoastBeanIcon color={roastColor} />
           </div>
-          <div className="grid grid-cols-2">
-            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
-              <dt className="text-[11px] leading-4 text-muted">{messages.unitPriceLabel}</dt>
-              <dd className="mt-1 text-[13px] font-semibold text-foreground">
-                {new Intl.NumberFormat(messages.locale, {
-                  style: "currency",
-                  currency: "EUR",
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 3,
-                }).format(unitPrice)}
-                /g
-              </dd>
-            </div>
-            <div className="border border-solid px-3 py-2.5" style={detailCellStyle}>
-              <dt className="text-[11px] leading-4 text-muted">Cost per cup</dt>
-              <dd className="mt-1 text-[13px] font-semibold text-foreground">
-                {new Intl.NumberFormat(messages.locale, {
-                  style: "currency",
-                  currency: "EUR",
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }).format(costPerCup)}
-              </dd>
-            </div>
-          </div>
-        </dl>
-
-        <div>
-          <p className="text-[11px] font-semibold tracking-[0.16em] text-muted uppercase">
-            Good for
-          </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <p className="min-w-0 flex-1 truncate text-[13px] leading-5 text-[#3b2416]">
-              {visibleRoastMatches.map((drink) => drink.name).join(" · ")}
+          <div className="relative flex basis-1/5 flex-col justify-center bg-white px-4 py-3">
+            <h3 className="font-serif text-[22px] font-medium leading-tight text-[#2f241c]">
+              {bean.brand}
+            </h3>
+            <p className="mt-0.5 font-serif text-lg font-normal text-muted">
+              {formatMoney(bean.price, messages.locale)}
             </p>
-            {!isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setIsRecommendationsExpanded(true)}
-                className="shrink-0 text-[13px] font-semibold text-muted transition hover:underline hover:underline-offset-4"
-              >
-                + {hiddenRoastMatchCount} more
-              </button>
-            ) : null}
+            <span className="absolute bottom-2 right-2 rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium text-accent backdrop-blur-[8px]">
+              Tap to flip ↻
+            </span>
           </div>
         </div>
 
-        <div className="group relative flex min-h-[76px] w-full flex-col rounded-xl border border-dashed border-line px-3 py-2.5">
-          {isNotesEditing || !currentBean.comments ? (
-            <textarea
-              className={`w-full resize-none bg-transparent text-[13px] leading-6 text-muted outline-none transition-[height] duration-200 ease-in-out placeholder:text-muted ${
-                isNotesFocused ? "h-[100px]" : "h-[44px]"
-              }`}
-              placeholder="Add your notes after brewing..."
-              value={noteDraft}
-              onChange={(event) => setNoteDraft(event.target.value)}
-              onFocus={() => setIsNotesFocused(true)}
-              onBlur={handleNotesSave}
-              onKeyDown={handleNotesKeyDown}
-              disabled={isPending}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setIsNotesEditing(true);
-                setIsNotesFocused(true);
-              }}
-              className="min-h-[44px] w-full text-left text-[13px] leading-6 text-muted"
-            >
-              {currentBean.comments}
-            </button>
-          )}
-        </div>
-
-        {actionError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {actionError}
+        <div className="absolute inset-0 flex rotate-y-180 flex-col overflow-hidden rounded-[24px] border-[0.5px] border-line bg-white p-6 shadow-[0_12px_40px_rgba(76,44,23,0.08)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <div>
+            <h3 className="font-serif text-[22px] font-medium leading-7 text-[#2f241c]">
+              {bean.brand}
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[#9b7b62]">
+              {messages.addedOn}{" "}
+              {new Date(bean.createdAt).toLocaleDateString(messages.locale)}
+            </p>
           </div>
-        ) : null}
 
-        {actionMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {actionMessage}
+          <dl className="mt-5">
+            <div className="grid grid-cols-3 border-y-[0.5px] border-line py-4">
+              <div className="border-r-[0.5px] border-line pr-3">
+                <dt className="mb-1.5 text-[11px] uppercase tracking-[0.15em] text-[#9b7b62]">
+                  {messages.priceLabel}
+                </dt>
+                <dd className="font-serif text-lg font-medium text-[#2f241c]">
+                  {formatMoney(bean.price, messages.locale)}
+                </dd>
+              </div>
+              <div className="border-r-[0.5px] border-line px-3">
+                <dt className="mb-1.5 text-[11px] uppercase tracking-[0.15em] text-[#9b7b62]">
+                  {messages.weightLabel}
+                </dt>
+                <dd className="font-serif text-lg font-medium text-[#2f241c]">
+                  {safeWeight}g
+                </dd>
+              </div>
+              <div className="pl-3">
+                <dt className="mb-1.5 text-[11px] uppercase tracking-[0.15em] text-[#9b7b62]">
+                  {messages.roastLabel}
+                </dt>
+                <dd className="font-serif text-lg font-medium text-[#2f241c]">
+                  {roastLabel}
+                </dd>
+              </div>
+            </div>
+          </dl>
+
+          <PriceRangeBar
+            context={priceContext}
+            label={priceLabel}
+            locale={messages.locale}
+            position={pricePosition}
+            unitPrice={unitPrice}
+          />
+
+          <div className="mt-4">
+            <p className="mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-[#9b7b62]">
+              Good for
+            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="min-w-0 flex-1 text-sm leading-6 text-[#2f241c]">
+                {visibleRoastMatches.map((drink) => drink.name).join(" · ")}
+              </p>
+              {!isRecommendationsExpanded && hiddenRoastMatchCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsRecommendationsExpanded(true);
+                  }}
+                  className="shrink-0 text-[13px] font-semibold text-muted transition hover:underline hover:underline-offset-4"
+                >
+                  + {hiddenRoastMatchCount} more
+                </button>
+              ) : null}
+            </div>
           </div>
-        ) : null}
 
-        <div
-          className="mt-auto grid grid-cols-3 pt-3"
-          style={{
-            borderTop: "0.5px solid var(--color-border-tertiary, var(--line))",
-          }}
-        >
-          <button
-            type="button"
-            onClick={handleStartEdit}
-            disabled={isPending}
-            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-[#5d4636] transition hover:text-accent disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {messages.edit}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsRecommendationsExpanded((current) => !current)}
-            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-[#5d4636] transition hover:text-accent"
-          >
-            Recipes
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            className="inline-flex items-center justify-center px-3 py-3 text-[13px] font-semibold text-red-700/75 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isPending ? messages.working : messages.delete}
-          </button>
+          <div className="mt-4 rounded-xl border-[0.5px] border-dashed border-line px-3.5 py-3">
+            <p className="mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-[#9b7b62]">
+              Notes
+            </p>
+            <p className="min-h-[44px] text-[13px] leading-6 text-muted">
+              {bean.comments || "Add your notes after brewing..."}
+            </p>
+          </div>
+
+          <p className="mt-auto pt-4 text-center text-[11px] font-medium text-accent">
+            ← Back
+          </p>
         </div>
       </div>
     </article>
