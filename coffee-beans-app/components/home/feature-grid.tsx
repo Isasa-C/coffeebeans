@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import Image from "next/image";
+"use client";
+
+import { type KeyboardEvent, useState } from "react";
 import { LineIcon, type IconName } from "@/components/icons/line-icon";
 
 interface FeatureGridProps {
@@ -9,128 +10,178 @@ interface FeatureGridProps {
   onToolsClick: () => void;
 }
 
+interface FeatureCardData {
+  id: string;
+  title: string;
+  heading: string;
+  description: string;
+  image: string;
+  imagePosition?: string;
+  icon: IconName;
+  imageAlt: string;
+  onOpen: () => void;
+}
+
 export function FeatureGrid({
   onBeansClick,
   onCafesClick,
   onCommunityClick,
   onToolsClick,
 }: FeatureGridProps) {
+  const [flippedCard, setFlippedCard] = useState<string | null>(null);
+  const cards: FeatureCardData[] = [
+    {
+      id: "beans",
+      title: "Coffee Beans",
+      heading: "Your bean library",
+      description:
+        "Track every bean, rate after brewing, remember what to repurchase.",
+      image: "/images/coffee-beans.png",
+      imagePosition: "center 45%",
+      icon: "bag",
+      imageAlt: "Coffee bean bag",
+      onOpen: onBeansClick,
+    },
+    {
+      id: "cafes",
+      title: "Cafes",
+      heading: "Paris cafes",
+      description:
+        "Curated quiet spots with wifi and good coffee.",
+      image: "/images/cafes.png",
+      icon: "pin",
+      imageAlt: "Warm cafe interior",
+      onOpen: onCafesClick,
+    },
+    {
+      id: "community",
+      title: "Community",
+      heading: "Share what you drink",
+      description:
+        "Compare bean libraries with friends.",
+      image: "/images/community.png",
+      imagePosition: "center 45%",
+      icon: "users",
+      imageAlt: "Coffee study table",
+      onOpen: onCommunityClick,
+    },
+    {
+      id: "tools",
+      title: "Tools",
+      heading: "Brewing tools",
+      description:
+        "Timer, dose calculator, method reference.",
+      image: "/images/brewing-timer.png",
+      imagePosition: "center 45%",
+      icon: "timer",
+      imageAlt: "Brewing timer",
+      onOpen: onToolsClick,
+    },
+  ];
+
   return (
-    <section aria-label="Explore Coffee Daily" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <ImageFeatureCard
-        title="Coffee Beans"
-        icon="bag"
-        image="/coffee-beans.png"
-        imageAlt="Coffee bean bag"
-        onClick={onBeansClick}
-      />
-
-      <ImageFeatureCard
-        title="Cafes"
-        icon="pin"
-        image="/cafes.png"
-        imageAlt="Warm cafe interior"
-        onClick={onCafesClick}
-      />
-
-      <ImageFeatureCard
-        title="Community"
-        icon="users"
-        image="/community.png"
-        imageAlt="Coffee study table"
-        onClick={onCommunityClick}
-      />
-
-      <FeatureCard title="Tools" icon="timer" onClick={onToolsClick}>
-        <TimerIllustration />
-      </FeatureCard>
+    <section
+      aria-label="Explore Coffee Daily"
+      className="grid w-full max-w-[96vw] grid-cols-4 gap-8"
+    >
+      {cards.map((card) => (
+        <FlipFeatureCard
+          key={card.id}
+          card={card}
+          isFlipped={flippedCard === card.id}
+          onToggle={() =>
+            setFlippedCard((current) => (current === card.id ? null : card.id))
+          }
+        />
+      ))}
     </section>
   );
 }
 
-interface FeatureCardProps {
-  title: string;
-  icon: IconName;
-  children: ReactNode;
-  onClick?: () => void;
-}
-
-function FeatureCard({ title, icon, children, onClick }: FeatureCardProps) {
-  const className =
-    "card-surface group flex min-h-[270px] flex-col justify-between rounded-[28px] bg-card p-4 text-left transition hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(76,44,23,0.12)]";
-
-  const content = (
-    <>
-      {children}
-      <div className="mt-5 flex items-center justify-between">
-        <span className="text-2xl font-semibold text-foreground">{title}</span>
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-accent">
-          <LineIcon name={icon} />
-        </span>
-      </div>
-    </>
-  );
-
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={className}>
-        {content}
-      </button>
-    );
+function FlipFeatureCard({
+  card,
+  isFlipped,
+  onToggle,
+}: {
+  card: FeatureCardData;
+  isFlipped: boolean;
+  onToggle: () => void;
+}) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onToggle();
+    }
   }
 
-  return <article className={className}>{content}</article>;
-}
-
-interface ImageFeatureCardProps {
-  title: string;
-  icon: IconName;
-  image: string;
-  imageAlt: string;
-  onClick: () => void;
-}
-
-function ImageFeatureCard({
-  title,
-  icon,
-  image,
-  imageAlt,
-  onClick,
-}: ImageFeatureCardProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card-surface group min-h-[270px] overflow-hidden rounded-[28px] bg-card text-left transition hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(76,44,23,0.12)]"
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`${card.title} - tap to learn more`}
+      onClick={onToggle}
+      onKeyDown={handleKeyDown}
+      className={`flip-card group aspect-[1/1.2] w-full cursor-pointer [perspective:1000px] ${
+        isFlipped ? "is-flipped" : ""
+      }`}
     >
-      <div className="relative h-44 overflow-hidden bg-[#f5efe5]">
-        <Image
-          src={image}
-          alt={imageAlt}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-          className="object-cover"
+      <div
+        className={`flip-card-inner relative h-full w-full rounded-[4px] transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-within:[transform:rotateY(180deg)] ${
+          isFlipped ? "[transform:rotateY(180deg)]" : ""
+        }`}
+      >
+        <div
+          aria-hidden
+          className="absolute inset-0 z-0 scale-110 bg-cover bg-center blur-[20px]"
+          style={{ backgroundImage: `url(${card.image})` }}
         />
-      </div>
-      <div className="flex items-center justify-between px-5 py-5">
-        <span className="text-2xl font-semibold text-foreground">
-          {title}
-        </span>
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white">
-          <LineIcon name={icon} />
-        </span>
-      </div>
-    </button>
-  );
-}
 
-function TimerIllustration() {
-  return (
-    <div className="flex h-32 items-center justify-between rounded-[22px] bg-[#f5eadc] px-5">
-      <span className="text-4xl font-bold tabular-nums text-foreground">02:30</span>
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white">
-        <LineIcon name="play" />
-      </span>
+        <div className="flip-card-face flip-card-front absolute inset-0 z-[1] flex flex-col overflow-hidden rounded-[4px] border-[0.5px] border-transparent bg-white shadow-[0_12px_40px_rgba(76,44,23,0.12)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
+          <div
+          className="relative flex-1 bg-cover bg-center brightness-[1.05] saturate-[0.85]"
+            style={{
+              backgroundImage: `url(${card.image})`,
+              backgroundPosition: card.imagePosition,
+            }}
+            role="img"
+            aria-label={card.imageAlt}
+          >
+            <span className="absolute left-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#2f241c] shadow-[0_8px_24px_rgba(76,44,23,0.14)] [&>svg]:h-4 [&>svg]:w-4">
+              <LineIcon name={card.icon} />
+            </span>
+            <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-accent backdrop-blur-[8px] transition-opacity group-hover:opacity-0 [-webkit-backdrop-filter:blur(8px)]">
+              Tap to flip ↻
+            </span>
+          </div>
+          <div className="flex h-14 items-center bg-white px-4">
+            <h2 className="font-serif text-base font-medium text-[#2f241c]">
+              {card.title}
+            </h2>
+          </div>
+        </div>
+
+        <div className="flip-card-face flip-card-back absolute inset-0 z-[1] flex flex-col items-center justify-center rounded-[4px] border-[0.5px] border-white/80 bg-white/60 p-5 text-center shadow-[0_12px_40px_rgba(76,44,23,0.12)] backdrop-blur-[8px] backdrop-saturate-[1.4] [-webkit-backdrop-filter:blur(8px)_saturate(140%)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <span className="mb-1 text-accent [&>svg]:h-6 [&>svg]:w-6">
+            <LineIcon name={card.icon} />
+          </span>
+          <h3 className="font-serif text-base font-medium text-[#2f241c]">
+            {card.heading}
+          </h3>
+          <p className="mt-2 max-w-[22ch] text-xs leading-[1.5] text-[#2f241c]">
+            {card.description}
+          </p>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              card.onOpen();
+            }}
+            className="mt-2 text-[11px] font-medium text-accent"
+          >
+            Open →
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

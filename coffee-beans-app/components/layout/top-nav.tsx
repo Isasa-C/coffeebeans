@@ -14,7 +14,10 @@ export function TopNav({ view, onNavigate, user, onLoginClick }: TopNavProps) {
     <header className="sticky top-0 z-50 flex min-h-16 items-center gap-4 border-b border-line/60 bg-white/90 px-4 backdrop-blur-xl sm:px-8">
       <BrandLogo onClick={() => onNavigate("home")} />
 
-      <nav aria-label="Primary" className="mx-auto flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
+      <nav
+        aria-label="Primary"
+        className="mx-auto flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto bg-transparent p-0"
+      >
         {NAV_ITEMS.map((item) => {
           const isActive = item.key === view;
 
@@ -32,13 +35,12 @@ export function TopNav({ view, onNavigate, user, onLoginClick }: TopNavProps) {
       <button
         type="button"
         onClick={onLoginClick}
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-white px-2 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-[#f5efe5] sm:px-3"
+        aria-label={user ? `Profile for ${user.name}` : "Sign in"}
+        title={user ? user.name : "Sign in"}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition hover:bg-[#f5efe5]"
       >
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#f5e6d8] text-xs font-semibold uppercase text-foreground">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/60 text-[11px] font-semibold uppercase text-foreground">
           {user ? getInitials(user.name) : "U"}
-        </span>
-        <span className="hidden max-w-[8rem] truncate sm:inline">
-          {user ? user.name : "Sign in"}
         </span>
       </button>
     </header>
@@ -76,10 +78,10 @@ function NavButton({
       onClick={onClick}
       aria-label={item.label}
       title={item.label}
-      className={`whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition sm:px-4 ${
+      className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
         isActive
           ? "bg-[#f5e6d8] text-foreground"
-          : "text-muted hover:bg-[#f5efe5] hover:text-foreground"
+          : "bg-transparent text-muted hover:bg-[#f5efe5] hover:text-foreground"
       }`}
     >
       {item.label}
