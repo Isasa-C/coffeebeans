@@ -1,6 +1,13 @@
 import type { IconName } from "@/components/icons/line-icon";
 
-export type NavKey = "home" | "beans" | "cafes" | "prices" | "guide" | "recipes";
+export type NavKey =
+  | "home"
+  | "today"
+  | "beans"
+  | "cafes"
+  | "prices"
+  | "guide"
+  | "recipes";
 
 export interface NavItem {
   key: NavKey;
@@ -11,6 +18,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { key: "home", label: "Home", icon: "cup" },
+  { key: "today", label: "Today", icon: "timer" },
   { key: "beans", label: "My Beans", icon: "bag" },
   { key: "cafes", label: "Paris Cafes", icon: "pin" },
   { key: "prices", label: "Cafe Prices", icon: "timer", href: "/coffee-shop-prices" },

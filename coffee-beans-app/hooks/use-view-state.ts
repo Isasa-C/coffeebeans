@@ -1,7 +1,14 @@
 import { useCallback, useState } from "react";
 import type { NavKey } from "@/lib/navigation";
 
-export type ViewState = "home" | "beans" | "cafes" | "prices" | "guide" | "recipes";
+export type ViewState =
+  | "home"
+  | "today"
+  | "beans"
+  | "cafes"
+  | "prices"
+  | "guide"
+  | "recipes";
 
 interface UseViewStateReturn {
   view: ViewState;
@@ -33,7 +40,7 @@ function scrollToElement(id: string) {
 }
 
 export function useViewState(): UseViewStateReturn {
-  const [view, setView] = useState<ViewState>("cafes");
+  const [view, setView] = useState<ViewState>("home");
   const [isAddBeanOpen, setIsAddBeanOpen] = useState(false);
 
   const navigateTo = useCallback((target: NavKey) => {

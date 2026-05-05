@@ -5,6 +5,8 @@ import { LanguageProvider } from "@/components/language-provider";
 import { useViewState } from "@/hooks/use-view-state";
 import { TopNav } from "@/components/layout/top-nav";
 import { HeroSection } from "@/components/home/hero-section";
+import { DrinkShowcase } from "@/components/home/drink-showcase";
+import { FeatureGrid } from "@/components/home/feature-grid";
 import { DailyOverview } from "@/components/home/daily-overview";
 import { BeansLibrarySection } from "@/components/beans/beans-library-section";
 import { AddBeanModal } from "@/components/beans/add-bean-modal";
@@ -94,6 +96,10 @@ function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
     return <CafesView />;
   }
 
+  if (view === "today") {
+    return <DailyOverview />;
+  }
+
   if (view === "prices") {
     return <CoffeeShopPricesPage embedded />;
   }
@@ -105,7 +111,15 @@ function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
   return (
     <>
       <HeroSection />
-      <DailyOverview />
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10 sm:px-8 sm:py-14">
+        <DrinkShowcase />
+        <FeatureGrid
+          onBeansClick={() => onNavigate("beans")}
+          onCafesClick={() => onNavigate("cafes")}
+          onCommunityClick={() => onNavigate("home")}
+          onToolsClick={() => onNavigate("today")}
+        />
+      </div>
     </>
   );
 }

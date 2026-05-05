@@ -4,23 +4,44 @@ import { LineIcon, type IconName } from "@/components/icons/line-icon";
 
 interface FeatureGridProps {
   onBeansClick: () => void;
-  onDiscoverClick: () => void;
+  onCafesClick: () => void;
+  onCommunityClick: () => void;
+  onToolsClick: () => void;
 }
 
-export function FeatureGrid({ onBeansClick, onDiscoverClick }: FeatureGridProps) {
+export function FeatureGrid({
+  onBeansClick,
+  onCafesClick,
+  onCommunityClick,
+  onToolsClick,
+}: FeatureGridProps) {
   return (
-    <section aria-label="Explore" className="grid gap-4 lg:grid-cols-4">
-      <BeansFeatureCard onClick={onBeansClick} />
+    <section aria-label="Explore Coffee Daily" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ImageFeatureCard
+        title="Coffee Beans"
+        icon="bag"
+        image="/coffee-beans.png"
+        imageAlt="Coffee bean bag"
+        onClick={onBeansClick}
+      />
 
-      <FeatureCard title="Cafes" icon="pin" onClick={onDiscoverClick}>
-        <CafeIllustration />
-      </FeatureCard>
+      <ImageFeatureCard
+        title="Cafes"
+        icon="pin"
+        image="/cafes.png"
+        imageAlt="Warm cafe interior"
+        onClick={onCafesClick}
+      />
 
-      <FeatureCard title="Community" icon="users">
-        <CommunityIllustration />
-      </FeatureCard>
+      <ImageFeatureCard
+        title="Community"
+        icon="users"
+        image="/community.png"
+        imageAlt="Coffee study table"
+        onClick={onCommunityClick}
+      />
 
-      <FeatureCard title="Tools" icon="timer">
+      <FeatureCard title="Tools" icon="timer" onClick={onToolsClick}>
         <TimerIllustration />
       </FeatureCard>
     </section>
@@ -36,7 +57,7 @@ interface FeatureCardProps {
 
 function FeatureCard({ title, icon, children, onClick }: FeatureCardProps) {
   const className =
-    "card-surface group flex min-h-[270px] flex-col justify-between rounded-[28px] bg-card p-4 text-left transition hover:-translate-y-0.5";
+    "card-surface group flex min-h-[270px] flex-col justify-between rounded-[28px] bg-card p-4 text-left transition hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(76,44,23,0.12)]";
 
   const content = (
     <>
@@ -61,65 +82,45 @@ function FeatureCard({ title, icon, children, onClick }: FeatureCardProps) {
   return <article className={className}>{content}</article>;
 }
 
-function BeansFeatureCard({ onClick }: { onClick: () => void }) {
+interface ImageFeatureCardProps {
+  title: string;
+  icon: IconName;
+  image: string;
+  imageAlt: string;
+  onClick: () => void;
+}
+
+function ImageFeatureCard({
+  title,
+  icon,
+  image,
+  imageAlt,
+  onClick,
+}: ImageFeatureCardProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="card-surface group min-h-[270px] overflow-hidden rounded-[28px] bg-card text-left transition hover:-translate-y-0.5 lg:col-span-2"
+      className="card-surface group min-h-[270px] overflow-hidden rounded-[28px] bg-card text-left transition hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(76,44,23,0.12)]"
     >
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-44 overflow-hidden bg-[#f5efe5]">
         <Image
-          src="/hero-coffee.png"
-          alt="Coffee bean bag and beans"
+          src={image}
+          alt={imageAlt}
           fill
-          sizes="(max-width: 1024px) 100vw, 50vw"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
           className="object-cover"
         />
       </div>
       <div className="flex items-center justify-between px-5 py-5">
         <span className="text-2xl font-semibold text-foreground">
-          Coffee Beans
+          {title}
         </span>
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white">
-          <LineIcon name="arrow" />
+          <LineIcon name={icon} />
         </span>
       </div>
     </button>
-  );
-}
-
-function CafeIllustration() {
-  return (
-    <div
-      className="relative h-32 rounded-[22px] bg-gradient-to-br from-[#f3d5af] via-[#d2a171] to-[#6d4027]"
-      aria-hidden
-    >
-      <span className="absolute bottom-4 left-5 h-12 w-20 rounded-t-full border border-white/50 bg-white/25" />
-      <span className="absolute bottom-4 right-5 h-16 w-12 rounded-t-2xl bg-[#2b1b12]/35" />
-    </div>
-  );
-}
-
-function CommunityIllustration() {
-  const avatarColors = ["#5a351f", "#d49a6a", "#2b1b12"];
-
-  return (
-    <div
-      className="relative h-32 rounded-[22px] bg-gradient-to-br from-[#f6e9d4] via-[#c99c72] to-[#7b5137]"
-      aria-hidden
-    >
-      <span className="absolute bottom-5 left-5 h-16 w-16 rounded-full bg-white/45" />
-      <span className="absolute right-5 top-5 flex -space-x-2">
-        {avatarColors.map((bg) => (
-          <span
-            key={bg}
-            className="h-9 w-9 rounded-full border-2 border-card"
-            style={{ backgroundColor: bg }}
-          />
-        ))}
-      </span>
-    </div>
   );
 }
 
