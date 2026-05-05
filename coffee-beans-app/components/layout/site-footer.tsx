@@ -1,53 +1,90 @@
 import Link from "next/link";
-import { useLanguage } from "@/components/language-provider";
-import { NAV_ITEMS, type NavKey } from "@/lib/navigation";
 
-interface SiteFooterProps {
-  onNavigate: (target: NavKey) => void;
+function EmailIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="h-4 w-4 shrink-0"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </svg>
+  );
 }
 
-export function SiteFooter({ onNavigate }: SiteFooterProps) {
-  const { language, setLanguage, messages, languageOptions } = useLanguage();
-
+export function SiteFooter() {
   return (
-    <footer className="card-surface flex flex-col gap-4 rounded-[28px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <nav aria-label="Footer" className="grid grid-cols-5 gap-1 rounded-[24px] bg-card p-1 text-center">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => onNavigate(item.key)}
-            className="min-w-0 break-words rounded-[20px] px-1 py-3 text-[10px] font-semibold leading-tight text-muted transition hover:bg-[#f0e5d8] hover:text-accent sm:px-3 sm:text-xs"
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+    <footer className="border-t border-[rgba(76,44,23,0.10)] bg-[#ede4d5] px-6 pb-8 pt-16 sm:px-12">
+      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-8 border-b border-[rgba(76,44,23,0.10)] pb-12 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12">
+        <div className="flex flex-col gap-3">
+          <div className="mb-1 flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2b1b12] font-serif text-base text-white">
+              C
+            </span>
+            <span className="font-serif text-lg font-medium text-[#2b1b12]">
+              Coffee Daily
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-[#9b7b62]">
+            © 2026 Xuejing. All rights reserved.
+          </p>
+        </div>
 
-      <div className="flex items-center gap-3">
-        <Link
-          href="/case-study"
-          className="text-sm font-semibold text-accent underline decoration-2 underline-offset-4"
-        >
-          About →
-        </Link>
+        <nav aria-label="Site">
+          <h4 className="mb-4 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9b7b62]">
+            Explore
+          </h4>
+          <ul className="flex list-none flex-col gap-2.5 p-0">
+            <li>
+              <Link className="text-sm text-[#8b7a6d] transition hover:text-[#5a351f]" href="/">
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link className="text-sm text-[#8b7a6d] transition hover:text-[#5a351f]" href="/today">
+                Today
+              </Link>
+            </li>
+            <li>
+              <Link className="text-sm text-[#8b7a6d] transition hover:text-[#5a351f]" href="/explore">
+                Explore
+              </Link>
+            </li>
+            <li>
+              <Link className="text-sm text-[#8b7a6d] transition hover:text-[#5a351f]" href="/learn">
+                Learn
+              </Link>
+            </li>
+          </ul>
+        </nav>
 
-        <label htmlFor="languageSwitcher" className="mr-2 text-sm font-semibold text-foreground">
-          {messages.languageLabel}
-        </label>
+        <div>
+          <h4 className="mb-4 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9b7b62]">
+            Get in touch
+          </h4>
+          <ul className="flex list-none flex-col gap-2.5 p-0">
+            <li>
+              <a
+                href="mailto:isasa57@outlook.com"
+                className="inline-flex items-center gap-2 text-sm text-[#8b7a6d] transition hover:text-[#5a351f]"
+              >
+                <EmailIcon />
+                isasa57@outlook.com
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-        <select
-          id="languageSwitcher"
-          value={language}
-          onChange={(event) => setLanguage(event.target.value as typeof language)}
-          className="rounded-full bg-transparent text-sm font-semibold text-accent outline-none"
-        >
-          {languageOptions.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-3 pt-6 text-xs text-[#9b7b62] sm:flex-row sm:justify-between">
+        <p>Built with Next.js, TypeScript, and care.</p>
+        <p>Photos curated from Unsplash.</p>
       </div>
     </footer>
   );

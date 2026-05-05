@@ -114,17 +114,20 @@ export function BeanForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <section className="card-surface rounded-[1.75rem] p-5 sm:p-6">
-      <div className="mb-6 space-y-2">
-        <h2 className="display-font text-3xl font-semibold text-accent">
+    <section className="bean-form-compact max-h-[calc(100vh-2rem)] overflow-y-auto rounded-[18px] border border-[rgba(76,44,23,0.14)] bg-[#f5efe5] p-4 shadow-[0_24px_80px_rgba(76,44,23,0.18)] sm:max-h-[calc(100vh-4rem)] sm:p-5">
+      <div className="mb-4 pr-9">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9b7b62]">
+          Library
+        </p>
+        <h2 className="font-serif text-[30px] font-medium leading-none tracking-[-0.5px] text-[#2b1b12]">
           {messages.addBeanTitle}
         </h2>
-        <p className="text-sm leading-7 text-muted">
+        <p className="mt-2 text-[13px] leading-6 text-[#735d4d]">
           {messages.addBeanDescription}
         </p>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <BeanFormFields
           fieldErrors={fieldErrors}
           formValues={formValues}
@@ -134,7 +137,7 @@ export function BeanForm({ onSuccess }: { onSuccess?: () => void }) {
           onQuickPickBrand={handleQuickPickBrand}
         />
 
-        <p className="text-xs leading-6 text-muted">
+        <p className="text-[11px] leading-5 text-[#735d4d]">
           {messages.imageHelp}
         </p>
 
@@ -153,7 +156,7 @@ export function BeanForm({ onSuccess }: { onSuccess?: () => void }) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex w-full items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex w-full items-center justify-center rounded-full bg-[#d4673e] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#b35530] disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isPending ? messages.savingBean : messages.saveBean}
         </button>

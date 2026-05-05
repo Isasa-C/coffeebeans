@@ -6,7 +6,7 @@ import { saveUploadedImage } from "@/lib/uploads";
 import { beanFormSchema } from "@/lib/validations/bean";
 
 export const runtime = "nodejs";
-const DEFAULT_BEAN_IMAGE_URL = "/default-bean.png";
+const DEFAULT_BEAN_IMAGE_URL = "/default-bean-latest.png";
 
 export async function GET() {
   try {

@@ -1,6 +1,7 @@
 import { NAV_ITEMS, type NavKey } from "@/lib/navigation";
 import type { ViewState } from "@/hooks/use-view-state";
 import type { LocalUser } from "@/hooks/use-local-user";
+import Link from "next/link";
 
 interface TopNavProps {
   view: ViewState;
@@ -73,8 +74,8 @@ function NavButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Link
+      href={item.href ?? "/"}
       onClick={onClick}
       aria-label={item.label}
       title={item.label}
@@ -85,7 +86,7 @@ function NavButton({
       }`}
     >
       {item.label}
-    </button>
+    </Link>
   );
 }
 

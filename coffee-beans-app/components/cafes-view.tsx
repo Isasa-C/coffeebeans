@@ -1,4 +1,4 @@
-const cafes = [
+export const cafes = [
   {
     name: "Coutume Cafe",
     rating: "4.6",

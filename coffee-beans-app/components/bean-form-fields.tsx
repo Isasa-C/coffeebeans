@@ -37,7 +37,7 @@ export function BeanFormFields({
   return (
     <>
       <div>
-        <label className="mb-2 block text-sm font-semibold" htmlFor="brand">
+        <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="brand">
           {messages.brand}
         </label>
         <input
@@ -48,13 +48,13 @@ export function BeanFormFields({
           value={formValues.brand}
           onChange={onChange}
         />
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {brandOptions.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => onQuickPickBrand?.(option)}
-              className={`rounded-full px-2 py-1 text-[6px] font-semibold text-white transition ${
+              className={`rounded-full px-2 py-1 text-[9px] font-semibold text-white transition ${
                 formValues.brand === option
                   ? "bg-[#5c3520] shadow-[0_8px_20px_rgba(92,53,32,0.2)]"
                   : "bg-[#8a4b2a] hover:bg-[#6f3519]"
@@ -67,9 +67,9 @@ export function BeanFormFields({
         <FieldError message={fieldErrors.brand?.[0]} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="price">
+          <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="price">
             {messages.price}
           </label>
           <input
@@ -87,7 +87,7 @@ export function BeanFormFields({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="weight">
+          <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="weight">
             {messages.weight}
           </label>
           <input
@@ -107,7 +107,7 @@ export function BeanFormFields({
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold" htmlFor="bestFor">
+        <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="bestFor">
           {messages.roastLabel}
         </label>
         <select
@@ -123,20 +123,20 @@ export function BeanFormFields({
             </option>
           ))}
         </select>
-        <p className="mt-2 text-xs leading-6 text-muted">
+        <p className="mt-1.5 text-[11px] leading-5 text-muted">
           {messages.roastHelper}
         </p>
         <FieldError message={fieldErrors.bestFor?.[0]} />
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold" htmlFor="comments">
+        <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="comments">
           {messages.comments}
         </label>
         <textarea
           id="comments"
           name="comments"
-          rows={4}
+          rows={3}
           className="field resize-none"
           placeholder={messages.commentsPlaceholder}
           value={formValues.comments}
@@ -146,7 +146,7 @@ export function BeanFormFields({
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold" htmlFor="image">
+        <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="image">
           {messages.imageLabel}
         </label>
         <input

@@ -8,12 +8,14 @@ export type ViewState =
   | "cafes"
   | "prices"
   | "guide"
-  | "recipes";
+  | "recipes"
+  | "explore"
+  | "learn";
 
 interface UseViewStateReturn {
   view: ViewState;
   isAddBeanOpen: boolean;
-  navigateTo: (target: NavKey) => void;
+  navigateTo: (target: NavKey | ViewState) => void;
   openAddBean: () => void;
   closeAddBean: () => void;
 }
@@ -43,7 +45,7 @@ export function useViewState(): UseViewStateReturn {
   const [view, setView] = useState<ViewState>("home");
   const [isAddBeanOpen, setIsAddBeanOpen] = useState(false);
 
-  const navigateTo = useCallback((target: NavKey) => {
+  const navigateTo = useCallback((target: NavKey | ViewState) => {
     if (target === "beans") {
       setView("beans");
       window.setTimeout(() => scrollToElement("coffee-beans"), 0);

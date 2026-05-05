@@ -193,7 +193,7 @@ function PriceRangeBar({
 
 function RoastBeanIcon({ color }: { color: string }) {
   return (
-    <span className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+    <span className="roast-bean-icon">
       <svg
         aria-hidden="true"
         className="h-[18px] w-[18px]"
@@ -203,6 +203,44 @@ function RoastBeanIcon({ color }: { color: string }) {
         <path d="M31.7 5.8c7.5 3.5 9.4 14.7 4.2 25.1-5.2 10.3-15.5 15.9-23 12.4S3.5 28.6 8.7 18.2C13.9 7.9 24.2 2.3 31.7 5.8Zm-1.4 3c-4.9 5.8-6.8 11.3-5.8 16.7.8 4.5-.3 8.8-3.5 12.9 4.4-1.8 8.7-5.8 11.8-11.9 4.4-8.8 3.3-17.1-2.5-17.7Z" />
       </svg>
     </span>
+  );
+}
+
+function getRoastTagClass(roast: string) {
+  const normalizedRoast = roast.toLowerCase();
+
+  if (normalizedRoast.includes("light") && normalizedRoast.includes("medium")) {
+    return "medium-light";
+  }
+
+  if (normalizedRoast.includes("light")) {
+    return "light";
+  }
+
+  if (normalizedRoast.includes("dark") && normalizedRoast.includes("medium")) {
+    return "medium-dark";
+  }
+
+  if (normalizedRoast.includes("dark")) {
+    return "dark";
+  }
+
+  return "medium";
+}
+
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <div className="bean-rating" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((value) => (
+        <span
+          key={value}
+          className={`star ${value <= rating ? "filled" : ""}`}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -219,8 +257,12 @@ export function BeanCard({ bean, priceContext }: BeanCardProps) {
     ? roastMatches
     : roastMatches.slice(0, 3);
   const hiddenRoastMatchCount = Math.max(roastMatches.length - 3, 0);
-  const hasCustomImage = Boolean(bean.imageUrl) && bean.imageUrl !== "/default-bean.png";
-  const imageUrl = hasCustomImage ? bean.imageUrl : "/default-bean.png";
+  const defaultBeanImageUrl = "/default-bean-latest.png";
+  const hasCustomImage =
+    Boolean(bean.imageUrl) &&
+    bean.imageUrl !== "/default-bean.png" &&
+    bean.imageUrl !== "/default-bean.png?v=2";
+  const imageUrl = hasCustomImage ? bean.imageUrl : defaultBeanImageUrl;
   const roastLabel =
     messages.bestForOptions[bean.bestFor as keyof typeof messages.bestForOptions] ??
     bean.bestFor;
@@ -244,28 +286,42 @@ export function BeanCard({ bean, priceContext }: BeanCardProps) {
       aria-label={`${bean.brand} - tap to flip`}
       onClick={toggleFlip}
       onKeyDown={handleKeyDown}
-      className="group h-full min-h-[560px] cursor-pointer [perspective:1200px]"
+      className="flip-card group cursor-pointer [perspective:1200px]"
     >
       <div
-        className={`relative h-full min-h-[560px] w-full rounded-[24px] transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-within:[transform:rotateY(180deg)] ${
+        className={`relative h-full w-full rounded-[24px] transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-within:[transform:rotateY(180deg)] ${
           isFlipped ? "[transform:rotateY(180deg)]" : ""
         }`}
       >
-        <div className="absolute inset-0 flex flex-col overflow-hidden rounded-[24px] border-[0.5px] border-line bg-white shadow-[0_12px_40px_rgba(76,44,23,0.08)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
+        <div className="flip-card-face flip-card-front absolute inset-0 overflow-hidden rounded-[24px] border-[0.5px] border-line bg-white shadow-[0_12px_40px_rgba(76,44,23,0.08)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
           <div
-            className="relative basis-4/5 bg-[#f0ebe4] bg-cover bg-center"
+            className="flip-card-front-image"
             style={{ backgroundImage: `url(${imageUrl})` }}
           >
             <RoastBeanIcon color={roastColor} />
           </div>
-          <div className="relative flex basis-1/5 flex-col justify-center bg-white px-4 py-3">
-            <h3 className="font-serif text-[22px] font-medium leading-tight text-[#2f241c]">
+
+          <div className="flip-card-info">
+            <span className={`roast-tag ${getRoastTagClass(bean.bestFor)}`}>
+              {roastLabel}
+            </span>
+
+            <h3 className="bean-name">
               {bean.brand}
             </h3>
-            <p className="mt-0.5 font-serif text-lg font-normal text-muted">
-              {formatMoney(bean.price, messages.locale)}
-            </p>
-            <span className="absolute bottom-2 right-2 rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium text-accent backdrop-blur-[8px]">
+            <p className="bean-source">{roastLabel}</p>
+
+            <div className="bean-footer">
+              <div className="bean-price-block">
+                <div className="bean-price">{formatMoney(bean.price, messages.locale)}</div>
+                <div className="bean-unit-price">
+                  {safeWeight}g · {formatUnitPrice(unitPrice, messages.locale)}
+                </div>
+              </div>
+              <StarRating rating={bean.rating} />
+            </div>
+
+            <span className="flip-hint">
               Tap to flip ↻
             </span>
           </div>
