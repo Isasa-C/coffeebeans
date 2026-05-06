@@ -100,6 +100,7 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
       today: "/today",
       explore: "/explore",
       learn: "/learn",
+      tools: "/tools",
     };
 
     router.push(routes[target]);
@@ -222,7 +223,7 @@ function BeansLibraryPanel({
   return (
     <section className="beans-page">
       <aside className="bean-list-column">
-        <h1 className="page-heading">Tap a bean to see its details.</h1>
+        <h1 className="section-label">Purchased beans</h1>
 
         <div className="bean-rows">
           {sortedBeans.map((bean) => (
@@ -279,26 +280,6 @@ function BeanHero({ bean }: { bean: BeanRecord }) {
         height={900}
         priority
       />
-
-      <div className="bean-hero-caption">
-        <svg
-          className="caption-arrow"
-          viewBox="0 0 40 40"
-          width="32"
-          height="32"
-          aria-hidden="true"
-        >
-          <path
-            d="M30 8 Q14 4 12 26 L8 30 M12 26 L18 30"
-            fill="none"
-            stroke="#9b7b62"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <p className="caption-text">Smooth, balanced, and complex.</p>
-      </div>
     </div>
   );
 }

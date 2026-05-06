@@ -4,7 +4,8 @@ export type NavKey =
   | "home"
   | "today"
   | "explore"
-  | "learn";
+  | "learn"
+  | "tools";
 
 export interface NavItem {
   key: NavKey;
@@ -18,4 +19,5 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "today", label: "Today", icon: "timer", href: "/today" },
   { key: "explore", label: "Explore", icon: "pin", href: "/explore" },
   { key: "learn", label: "Learn", icon: "arrow", href: "/learn" },
+  { key: "tools", label: "Tools", icon: "timer", href: "/tools" },
 ];

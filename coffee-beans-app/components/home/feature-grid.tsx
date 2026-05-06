@@ -4,6 +4,7 @@ import { type KeyboardEvent, useState } from "react";
 import { LineIcon, type IconName } from "@/components/icons/line-icon";
 
 interface FeatureGridProps {
+  onTodayClick: () => void;
   onBeansClick: () => void;
   onCafesClick: () => void;
   onCommunityClick: () => void;
@@ -23,6 +24,7 @@ interface FeatureCardData {
 }
 
 export function FeatureGrid({
+  onTodayClick,
   onBeansClick,
   onCafesClick,
   onCommunityClick,
@@ -30,6 +32,18 @@ export function FeatureGrid({
 }: FeatureGridProps) {
   const [flippedCard, setFlippedCard] = useState<string | null>(null);
   const cards: FeatureCardData[] = [
+    {
+      id: "today",
+      title: "Today",
+      heading: "Your coffee day",
+      description:
+        "Log drinks, water, and timing in one calm daily view.",
+      image: "/images/today.png",
+      imagePosition: "center 36%",
+      icon: "timer",
+      imageAlt: "Today coffee dashboard",
+      onOpen: onTodayClick,
+    },
     {
       id: "beans",
       title: "Coffee Beans",
@@ -82,7 +96,7 @@ export function FeatureGrid({
   return (
     <section
       aria-label="Explore Coffee Daily"
-      className="grid w-full max-w-[96vw] grid-cols-4 gap-8"
+      className="grid w-full max-w-[96vw] grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-5 lg:gap-8"
     >
       {cards.map((card) => (
         <FlipFeatureCard
@@ -121,7 +135,7 @@ function FlipFeatureCard({
       aria-label={`${card.title} - tap to learn more`}
       onClick={onToggle}
       onKeyDown={handleKeyDown}
-      className={`flip-card group aspect-[1/1.2] w-full cursor-pointer [perspective:1000px] ${
+      className={`flip-card group mx-auto aspect-[1/1.18] w-full max-w-[420px] cursor-pointer [perspective:1000px] sm:max-w-none ${
         isFlipped ? "is-flipped" : ""
       }`}
     >

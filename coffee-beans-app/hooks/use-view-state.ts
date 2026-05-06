@@ -10,7 +10,8 @@ export type ViewState =
   | "guide"
   | "recipes"
   | "explore"
-  | "learn";
+  | "learn"
+  | "tools";
 
 interface UseViewStateReturn {
   view: ViewState;

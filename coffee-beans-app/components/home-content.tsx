@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { BeanRecord } from "@/lib/utils";
 import { LanguageProvider } from "@/components/language-provider";
 import { useViewState } from "@/hooks/use-view-state";
@@ -32,6 +33,7 @@ export function HomeContent({ catalog }: HomeContentProps) {
 
 function HomeContentInner({ catalog }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const router = useRouter();
   const { user, login, logout } = useLocalUser();
   const { view, isAddBeanOpen, navigateTo, openAddBean, closeAddBean } =
     useViewState();
@@ -51,6 +53,7 @@ function HomeContentInner({ catalog }: HomeContentProps) {
           catalog={catalog}
           onNavigate={navigateTo}
           onAddBean={openAddBean}
+          onToolsClick={() => router.push("/tools")}
         />
       </div>
 
@@ -71,9 +74,16 @@ interface PageBodyProps {
   catalog: BeanRecord[];
   onNavigate: ReturnType<typeof useViewState>["navigateTo"];
   onAddBean: () => void;
+  onToolsClick: () => void;
 }
 
-function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
+function PageBody({
+  view,
+  catalog,
+  onNavigate,
+  onAddBean,
+  onToolsClick,
+}: PageBodyProps) {
   if (view === "guide") {
     return <BeanGuideView />;
   }
@@ -136,10 +146,11 @@ function PageBody({ view, catalog, onNavigate, onAddBean }: PageBodyProps) {
 
           <div className="mt-8">
             <FeatureGrid
+              onTodayClick={() => onNavigate("today")}
               onBeansClick={() => onNavigate("beans")}
               onCafesClick={() => onNavigate("cafes")}
               onCommunityClick={() => onNavigate("home")}
-              onToolsClick={() => onNavigate("today")}
+              onToolsClick={onToolsClick}
             />
           </div>
         </div>
