@@ -120,7 +120,7 @@ function PageBody({
   }
 
   return (
-    <section className="relative h-[calc(100vh-64px)] min-h-[600px] w-full overflow-hidden bg-[#efe8dc]">
+    <section className="relative min-h-[600px] w-full overflow-visible bg-[#efe8dc] md:h-[calc(100vh-64px)] md:overflow-hidden">
       <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-end">
         <Image
           src="/hero-latte-scene-latest.png"
@@ -132,7 +132,7 @@ function PageBody({
         />
       </div>
 
-      <div className="relative z-10 flex h-full max-w-[96vw] flex-col px-6 py-8 min-[480px]:px-8 lg:px-8 lg:py-24">
+      <div className="relative z-10 flex max-w-[96vw] flex-col px-6 py-8 min-[480px]:px-8 md:h-full lg:px-8 lg:py-24">
         <div>
           <h1 className="font-serif text-[48px] font-medium leading-[0.9] tracking-[-2px] text-[#2f241c] lg:text-[64px]">
             COFFEE

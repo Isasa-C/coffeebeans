@@ -18,6 +18,7 @@ interface FeatureCardData {
   description: string;
   image: string;
   imagePosition?: string;
+  imageSize?: string;
   icon: IconName;
   imageAlt: string;
   onOpen: () => void;
@@ -39,7 +40,8 @@ export function FeatureGrid({
       description:
         "Log drinks, water, and timing in one calm daily view.",
       image: "/images/today.png",
-      imagePosition: "center 36%",
+      imagePosition: "center 24%",
+      imageSize: "120%",
       icon: "timer",
       imageAlt: "Today coffee dashboard",
       onOpen: onTodayClick,
@@ -152,10 +154,11 @@ function FlipFeatureCard({
 
         <div className="flip-card-face flip-card-front absolute inset-0 z-[1] flex flex-col overflow-hidden rounded-[4px] border-[0.5px] border-transparent bg-white shadow-[0_12px_40px_rgba(76,44,23,0.12)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
           <div
-          className="relative flex-1 bg-cover bg-center brightness-[1.05] saturate-[0.85]"
+          className="relative flex-1 bg-cover bg-center brightness-[0.98] saturate-[1.05] contrast-[1.04]"
             style={{
-              backgroundImage: `url(${card.image})`,
+              backgroundImage: `linear-gradient(rgba(70,48,34,0.12), rgba(70,48,34,0.12)), url(${card.image})`,
               backgroundPosition: card.imagePosition,
+              backgroundSize: card.imageSize,
             }}
             role="img"
             aria-label={card.imageAlt}
