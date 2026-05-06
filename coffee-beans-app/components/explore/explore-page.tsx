@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LoginModal } from "@/components/auth/login-modal";
 import { AddBeanModal } from "@/components/beans/add-bean-modal";
 import { cafes } from "@/components/cafes-view";
@@ -88,11 +88,18 @@ export function ExplorePage({ catalog }: ExplorePageProps) {
 }
 
 function ExplorePageInner({ catalog }: ExplorePageProps) {
-  const [selectedMode, setSelectedMode] = useState<ExploreMode>("beans");
+  const searchParams = useSearchParams();
+  const [selectedMode, setSelectedMode] = useState<ExploreMode>(() =>
+    getExploreModeFromParam(searchParams.get("mode")),
+  );
   const [isAddBeanOpen, setIsAddBeanOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const router = useRouter();
   const { user, login, logout } = useLocalUser();
+
+  useEffect(() => {
+    setSelectedMode(getExploreModeFromParam(searchParams.get("mode")));
+  }, [searchParams]);
 
   function navigateTo(target: NavKey) {
     const routes: Record<NavKey, string> = {
@@ -145,6 +152,14 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
       />
     </>
   );
+}
+
+function getExploreModeFromParam(mode: string | null): ExploreMode {
+  if (mode === "cafes" || mode === "guide") {
+    return mode;
+  }
+
+  return "beans";
 }
 
 function ExploreSelector({

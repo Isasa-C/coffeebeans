@@ -53,7 +53,7 @@ function HomeContentInner({ catalog }: HomeContentProps) {
           catalog={catalog}
           onNavigate={navigateTo}
           onAddBean={openAddBean}
-          onToolsClick={() => router.push("/tools")}
+          onRoute={(path) => router.push(path)}
         />
       </div>
 
@@ -74,7 +74,7 @@ interface PageBodyProps {
   catalog: BeanRecord[];
   onNavigate: ReturnType<typeof useViewState>["navigateTo"];
   onAddBean: () => void;
-  onToolsClick: () => void;
+  onRoute: (path: string) => void;
 }
 
 function PageBody({
@@ -82,7 +82,7 @@ function PageBody({
   catalog,
   onNavigate,
   onAddBean,
-  onToolsClick,
+  onRoute,
 }: PageBodyProps) {
   if (view === "guide") {
     return <BeanGuideView />;
@@ -146,11 +146,11 @@ function PageBody({
 
           <div className="mt-8">
             <FeatureGrid
-              onTodayClick={() => onNavigate("today")}
-              onBeansClick={() => onNavigate("beans")}
-              onCafesClick={() => onNavigate("cafes")}
-              onCommunityClick={() => onNavigate("home")}
-              onToolsClick={onToolsClick}
+              onTodayClick={() => onRoute("/today")}
+              onBeansClick={() => onRoute("/explore")}
+              onCafesClick={() => onRoute("/explore?mode=cafes")}
+              onCommunityClick={() => onRoute("/explore")}
+              onToolsClick={() => onRoute("/tools")}
             />
           </div>
         </div>
