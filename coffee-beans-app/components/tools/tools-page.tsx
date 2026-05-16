@@ -398,7 +398,7 @@ export function ToolsPage() {
   );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const router = useRouter();
-  const { user, login, logout } = useLocalUser();
+  const { user, signIn, signUp, logout } = useLocalUser();
 
   const currentTimerStage = stages[currentStage] ?? stages[0];
   const currentDuration = currentTimerStage?.duration ?? 1;
@@ -623,7 +623,8 @@ export function ToolsPage() {
         isOpen={isLoginOpen}
         user={user}
         onClose={() => setIsLoginOpen(false)}
-        onLogin={login}
+        onSignIn={signIn}
+        onSignUp={signUp}
         onLogout={logout}
       />
     </>

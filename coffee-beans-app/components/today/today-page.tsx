@@ -36,7 +36,7 @@ const INITIAL_TIMELINE_ENTRIES: CoffeeTimelineEntry[] = INITIAL_CUPS.map((cup) =
     drinkTypeId: cup.typeId,
     name: drink.name,
     caffeineMg: drink.caffeineMg,
-    date: "2026-05-05",
+    date: getParisDateKey(),
     time: cup.loggedAt,
   };
 });
@@ -121,7 +121,7 @@ export function TodayPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
   const router = useRouter();
-  const { user, login, logout } = useLocalUser();
+  const { user, signIn, signUp, logout } = useLocalUser();
   const totalCaffeineMg = cups.reduce((sum, cup) => {
     const drink = DRINK_TYPES.find((drinkType) => drinkType.id === cup.typeId);
     return sum + (drink?.caffeineMg ?? 0);
@@ -172,7 +172,7 @@ export function TodayPage() {
   }
 
   function addCup(typeId: DrinkTypeId) {
-    if (cups.length >= 4) {
+    if (cups.length >= COFFEE_LIMIT) {
       showToast("That's a lot of caffeine — consider water instead");
       return;
     }
@@ -243,7 +243,8 @@ export function TodayPage() {
         isOpen={isLoginOpen}
         user={user}
         onClose={() => setIsLoginOpen(false)}
-        onLogin={login}
+        onSignIn={signIn}
+        onSignUp={signUp}
         onLogout={logout}
       />
     </>

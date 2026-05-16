@@ -15,7 +15,7 @@ export default function LearnPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("iced-oat-latte");
   const router = useRouter();
-  const { user, login, logout } = useLocalUser();
+  const { user, signIn, signUp, logout } = useLocalUser();
 
   const selectedRecipe =
     recipes.find((recipe) => recipe.id === selectedId) ?? recipes[0];
@@ -66,7 +66,8 @@ export default function LearnPage() {
         isOpen={isLoginOpen}
         user={user}
         onClose={() => setIsLoginOpen(false)}
-        onLogin={login}
+        onSignIn={signIn}
+        onSignUp={signUp}
         onLogout={logout}
       />
     </>

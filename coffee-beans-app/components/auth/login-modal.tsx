@@ -1,23 +1,32 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { LocalUser } from "@/hooks/use-local-user";
 
 interface LoginModalProps {
   isOpen: boolean;
   user: LocalUser | null;
   onClose: () => void;
-  onLogin: (user: LocalUser) => void;
+  onSignIn: (payload: { email: string; password: string }) => { ok: boolean; error?: string };
+  onSignUp: (payload: { name: string; email: string; password: string }) => { ok: boolean; error?: string };
   onLogout: () => void;
 }
+
+type AuthMode = "signin" | "signup";
 
 export function LoginModal({
   isOpen,
   user,
   onClose,
-  onLogin,
+  onSignIn,
+  onSignUp,
   onLogout,
 }: LoginModalProps) {
+  const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -40,24 +49,48 @@ export function LoginModal({
     };
   }, [isOpen, onClose]);
 
+  const title = useMemo(() => {
+    if (user) {
+      return "Your account";
+    }
+
+    return mode === "signup" ? "Sign up" : "Sign in";
+  }, [mode, user]);
+
   if (!isOpen) {
     return null;
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setErrorMessage(null);
 
-    const cleanName = name.trim();
-    const cleanEmail = email.trim();
+    if (mode === "signup") {
+      const result = onSignUp({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
 
-    if (!cleanName || !cleanEmail) {
+      if (!result.ok) {
+        setErrorMessage(result.error || "Unable to sign up right now.");
+        return;
+      }
+
+      onClose();
       return;
     }
 
-    onLogin({
-      name: cleanName,
-      email: cleanEmail,
+    const result = onSignIn({
+      email: email.trim(),
+      password,
     });
+
+    if (!result.ok) {
+      setErrorMessage(result.error || "Unable to sign in right now.");
+      return;
+    }
+
     onClose();
   }
 
@@ -79,7 +112,7 @@ export function LoginModal({
               Account
             </div>
             <h2 id="login-modal-title" className="font-serif text-3xl font-normal">
-              {user ? "Your profile" : "Sign in"}
+              {title}
             </h2>
           </div>
           <button
@@ -97,43 +130,72 @@ export function LoginModal({
             <div className="rounded-2xl border border-line bg-[#faf8f5] p-5">
               <p className="font-serif text-2xl">{user.name}</p>
               <p className="mt-1 text-sm text-muted">{user.email}</p>
+              {user.favoriteDrink ? (
+                <p className="mt-2 text-sm text-[#735d4d]">Favorite: {user.favoriteDrink}</p>
+              ) : null}
             </div>
             <div className="flex gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/profile");
+                }}
+                className="flex-1 rounded-full border border-line bg-white px-4 py-3 text-sm font-medium text-foreground transition hover:bg-[#f5efe5]"
+              >
+                Personal page
+              </button>
               <button
                 type="button"
                 onClick={() => {
                   onLogout();
                   onClose();
                 }}
-                className="flex-1 rounded-full border border-line bg-white px-4 py-3 text-sm font-medium text-foreground transition hover:bg-[#f5efe5]"
-              >
-                Sign out
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
                 className="flex-1 rounded-full bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-strong"
               >
-                Done
+                Sign out
               </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="loginName">
-                Name
-              </label>
-              <input
-                id="loginName"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-lg border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-accent"
-                placeholder="Your name"
-                autoComplete="name"
-                required
-              />
+            <div className="grid grid-cols-2 gap-2 rounded-full bg-[#f5efe5] p-1">
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className={`rounded-full px-3 py-2 text-sm font-medium ${
+                  mode === "signin" ? "bg-white text-foreground shadow-sm" : "text-[#735d4d]"
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className={`rounded-full px-3 py-2 text-sm font-medium ${
+                  mode === "signup" ? "bg-white text-foreground shadow-sm" : "text-[#735d4d]"
+                }`}
+              >
+                Sign up
+              </button>
             </div>
+
+            {mode === "signup" ? (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="loginName">
+                  Name
+                </label>
+                <input
+                  id="loginName"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className="w-full rounded-lg border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-accent"
+                  placeholder="Your name"
+                  autoComplete="name"
+                  required
+                />
+              </div>
+            ) : null}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="loginEmail">
@@ -151,12 +213,35 @@ export function LoginModal({
               />
             </div>
 
+            <div>
+              <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="loginPassword">
+                Password
+              </label>
+              <input
+                id="loginPassword"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="w-full rounded-lg border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-accent"
+                placeholder="At least 6 characters"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                minLength={6}
+                required
+              />
+            </div>
+
+            {errorMessage ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {errorMessage}
+              </div>
+            ) : null}
+
             <div className="flex gap-2 pt-3">
               <button
                 type="submit"
                 className="flex-1 rounded-full bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-strong"
               >
-                Sign in
+                {mode === "signup" ? "Create account" : "Sign in"}
               </button>
             </div>
           </form>

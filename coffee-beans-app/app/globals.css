@@ -82,6 +82,11 @@ textarea {
   font: inherit;
 }
 
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid rgba(138, 75, 42, 0.9);
+  outline-offset: 2px;
+}
+
 ::selection {
   background: rgba(138, 75, 42, 0.18);
 }
@@ -212,6 +217,10 @@ textarea {
   background: rgba(76, 44, 23, 0.04);
 }
 
+.explore-selector-button:focus-visible {
+  background: rgba(76, 44, 23, 0.04);
+}
+
 .explore-selector-button.active {
   background: rgba(212, 103, 62, 0.1);
 }
@@ -250,8 +259,59 @@ textarea {
   width: 100%;
 }
 
+.beans-page.cards-view {
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: 56px;
+}
+
 .bean-list-column {
   min-width: 0;
+}
+
+.bean-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bean-list-header .section-label {
+  margin-bottom: 0;
+}
+
+.bean-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 0.5px solid var(--border-default);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.bean-view-switch button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.bean-view-switch button:hover {
+  color: var(--text-primary);
+}
+
+.bean-view-switch button.active {
+  background: #fff;
+  color: var(--text-primary);
+  box-shadow: 0 4px 14px rgba(76, 44, 23, 0.08);
 }
 
 .page-heading {
@@ -286,7 +346,21 @@ textarea {
   position: relative;
 }
 
+.bean-rank {
+  width: 24px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
 .bean-row:hover {
+  background: rgba(76, 44, 23, 0.04);
+}
+
+.bean-row:focus-visible {
   background: rgba(76, 44, 23, 0.04);
 }
 
@@ -359,6 +433,143 @@ textarea {
   font-size: 12px;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
+}
+
+.bean-row-actions {
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bean-row-action {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.bean-row-action.danger {
+  color: #9b2f2f;
+}
+
+.beans-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  min-width: 0;
+}
+
+.bean-gallery-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0.5px solid rgba(76, 44, 23, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 24px rgba(76, 44, 23, 0.06);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.bean-gallery-card:hover,
+.bean-gallery-card:focus-visible {
+  border-color: rgba(212, 103, 62, 0.42);
+  box-shadow: 0 14px 34px rgba(76, 44, 23, 0.1);
+  transform: translateY(-2px);
+}
+
+.bean-gallery-card.active {
+  border-color: rgba(212, 103, 62, 0.62);
+}
+
+.bean-gallery-image-wrap {
+  position: relative;
+  display: flex;
+  aspect-ratio: 1 / 1.08;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #fffaf3, #f2e7d8);
+  padding: 22px;
+}
+
+.bean-gallery-image {
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center center;
+  inset: 22px;
+  filter: drop-shadow(0 24px 30px rgba(76, 44, 23, 0.14));
+  mix-blend-mode: multiply;
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    #000 62%,
+    rgba(0, 0, 0, 0.72) 76%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse at center,
+    #000 62%,
+    rgba(0, 0, 0, 0.72) 76%,
+    transparent 100%
+  );
+}
+
+.bean-gallery-copy {
+  display: flex;
+  min-height: 172px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+}
+
+.bean-gallery-copy h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.bean-gallery-copy p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.bean-gallery-copy dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.bean-gallery-copy dt {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bean-gallery-copy dd {
+  margin: 3px 0 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.beans-gallery-empty {
+  max-width: 460px;
+  color: var(--text-secondary);
 }
 
 .add-bean-btn {
@@ -626,6 +837,10 @@ textarea {
 }
 
 .tool-row:hover {
+  background: rgba(76, 44, 23, 0.04);
+}
+
+.tool-row:focus-visible {
   background: rgba(76, 44, 23, 0.04);
 }
 
@@ -1844,6 +2059,11 @@ textarea {
     gap: 40px;
   }
 
+  .beans-page.cards-view {
+    grid-template-columns: 240px minmax(0, 1fr);
+    column-gap: 36px;
+  }
+
   .bean-details {
     grid-column: 1 / -1;
     justify-self: stretch;
@@ -1944,6 +2164,14 @@ textarea {
   .beans-page {
     grid-template-columns: 1fr;
     gap: 32px;
+  }
+
+  .beans-page.cards-view {
+    grid-template-columns: 1fr;
+  }
+
+  .beans-gallery {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   }
 
   .bean-details {

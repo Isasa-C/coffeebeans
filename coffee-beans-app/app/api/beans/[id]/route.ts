@@ -6,6 +6,7 @@ import { formatBeanRecord } from "@/lib/utils";
 import { beanUpdateSchema } from "@/lib/validations/bean";
 
 export const runtime = "nodejs";
+const OWNER_EMAIL = "xuejingcao@outlook.com";
 
 type RouteContext = {
   params: Promise<{
@@ -16,6 +17,14 @@ type RouteContext = {
 export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
   let uploadedFilePath: string | null = null;
+  const userEmail = request.headers.get("x-user-email")?.trim().toLowerCase();
+
+  if (userEmail !== OWNER_EMAIL) {
+    return NextResponse.json(
+      { error: "Only the owner account can edit beans." },
+      { status: 403 },
+    );
+  }
 
   try {
     const existingBean = await prisma.coffeeBean.findUnique({
@@ -97,8 +106,16 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   const { id } = await context.params;
+  const userEmail = request.headers.get("x-user-email")?.trim().toLowerCase();
+
+  if (userEmail !== OWNER_EMAIL) {
+    return NextResponse.json(
+      { error: "Only the owner account can delete beans." },
+      { status: 403 },
+    );
+  }
 
   try {
     const existingBean = await prisma.coffeeBean.findUnique({

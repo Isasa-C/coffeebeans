@@ -34,7 +34,7 @@ export function HomeContent({ catalog }: HomeContentProps) {
 function HomeContentInner({ catalog }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const router = useRouter();
-  const { user, login, logout } = useLocalUser();
+  const { user, signIn, signUp, logout } = useLocalUser();
   const { view, isAddBeanOpen, navigateTo, openAddBean, closeAddBean } =
     useViewState();
 
@@ -62,7 +62,8 @@ function HomeContentInner({ catalog }: HomeContentProps) {
         isOpen={isLoginOpen}
         user={user}
         onClose={() => setIsLoginOpen(false)}
-        onLogin={login}
+        onSignIn={signIn}
+        onSignUp={signUp}
         onLogout={logout}
       />
     </main>

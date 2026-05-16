@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginModal } from "@/components/auth/login-modal";
@@ -8,7 +8,7 @@ import { AddBeanModal } from "@/components/beans/add-bean-modal";
 import { cafes } from "@/components/cafes-view";
 import { LanguageProvider } from "@/components/language-provider";
 import { TopNav } from "@/components/layout/top-nav";
-import { useLocalUser } from "@/hooks/use-local-user";
+import { useLocalUser, type LocalUser } from "@/hooks/use-local-user";
 import type { NavKey } from "@/lib/navigation";
 import { formatCurrency, type BeanRecord } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ interface ExplorePageProps {
 }
 
 type ExploreMode = "beans" | "cafes" | "guide";
+type BeanLibraryView = "focused" | "cards";
 
 const exploreModes: Array<{
   id: ExploreMode;
@@ -70,6 +71,7 @@ const beanDrinkMatches: Record<string, string[]> = {
 };
 
 const defaultBeanImageUrl = "/default-bean-latest.png";
+const OWNER_EMAIL = "xuejingcao@outlook.com";
 
 function getBeanImageUrl(bean: BeanRecord) {
   return !bean.imageUrl ||
@@ -95,7 +97,7 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
   const [isAddBeanOpen, setIsAddBeanOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const router = useRouter();
-  const { user, login, logout } = useLocalUser();
+  const { user, signIn, signUp, saveFavoriteBean, favoriteBeans, logout } = useLocalUser();
 
   useEffect(() => {
     setSelectedMode(getExploreModeFromParam(searchParams.get("mode")));
@@ -111,6 +113,13 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
     };
 
     router.push(routes[target]);
+  }
+
+  function selectExploreMode(mode: ExploreMode) {
+    setSelectedMode(mode);
+    router.replace(mode === "beans" ? "/explore" : `/explore?mode=${mode}`, {
+      scroll: false,
+    });
   }
 
   return (
@@ -131,12 +140,23 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
               </h1>
             </header>
 
-            <ExploreSelector selectedMode={selectedMode} onSelect={setSelectedMode} />
+            <ExploreSelector selectedMode={selectedMode} onSelect={selectExploreMode} />
           </div>
 
           <ExploreMainPanel
             beans={catalog}
             selectedMode={selectedMode}
+            user={user}
+            favoriteBeanIds={new Set(favoriteBeans.map((bean) => bean.id))}
+            onSaveFavorite={(bean) =>
+              saveFavoriteBean({
+                id: bean.id,
+                brand: bean.brand,
+                roast: bean.bestFor,
+                imageUrl: bean.imageUrl,
+                price: bean.price,
+              })
+            }
             onAddBeanClick={() => setIsAddBeanOpen(true)}
           />
         </section>
@@ -147,7 +167,8 @@ function ExplorePageInner({ catalog }: ExplorePageProps) {
         isOpen={isLoginOpen}
         user={user}
         onClose={() => setIsLoginOpen(false)}
-        onLogin={login}
+        onSignIn={signIn}
+        onSignUp={signUp}
         onLogout={logout}
       />
     </>
@@ -201,10 +222,16 @@ function ExploreSelector({
 function ExploreMainPanel({
   beans,
   selectedMode,
+  user,
+  favoriteBeanIds,
+  onSaveFavorite,
   onAddBeanClick,
 }: {
   beans: BeanRecord[];
   selectedMode: ExploreMode;
+  user: LocalUser | null;
+  favoriteBeanIds: Set<string>;
+  onSaveFavorite: (bean: BeanRecord) => { ok: boolean; error?: string };
   onAddBeanClick: () => void;
 }) {
   if (selectedMode === "cafes") {
@@ -216,38 +243,193 @@ function ExploreMainPanel({
   }
 
   return (
-    <BeansLibraryPanel beans={beans} onAddBeanClick={onAddBeanClick} />
+    <BeansLibraryPanel
+      beans={beans}
+      user={user}
+      favoriteBeanIds={favoriteBeanIds}
+      onSaveFavorite={onSaveFavorite}
+      onAddBeanClick={onAddBeanClick}
+    />
   );
 }
 
 function BeansLibraryPanel({
   beans,
+  user,
+  favoriteBeanIds,
+  onSaveFavorite,
   onAddBeanClick,
 }: {
   beans: BeanRecord[];
+  user: LocalUser | null;
+  favoriteBeanIds: Set<string>;
+  onSaveFavorite: (bean: BeanRecord) => { ok: boolean; error?: string };
   onAddBeanClick: () => void;
 }) {
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<BeanLibraryView>("cards");
   const sortedBeans = [...beans].sort(
     (left, right) =>
       new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   );
+  const [rankOrder, setRankOrder] = useState(() => sortedBeans.map((bean) => bean.id));
+  const [draggedBeanId, setDraggedBeanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState(sortedBeans[0]?.id);
+  const [busyBeanId, setBusyBeanId] = useState<string | null>(null);
+  const isOwner = user?.email.toLowerCase() === OWNER_EMAIL;
+  const rankedBeans = useMemo(() => {
+    const byId = new Map(sortedBeans.map((bean) => [bean.id, bean]));
+    const ordered = rankOrder
+      .map((id) => byId.get(id))
+      .filter((bean): bean is BeanRecord => Boolean(bean));
+    const missing = sortedBeans.filter((bean) => !rankOrder.includes(bean.id));
+    return [...ordered, ...missing];
+  }, [sortedBeans, rankOrder]);
+
   const selectedBean =
-    sortedBeans.find((bean) => bean.id === selectedId) ?? sortedBeans[0];
+    rankedBeans.find((bean) => bean.id === selectedId) ?? rankedBeans[0];
+
+  function moveBeanToPosition(targetBeanId: string) {
+    if (!draggedBeanId || draggedBeanId === targetBeanId) {
+      return;
+    }
+
+    setRankOrder((current) => {
+      const fromIndex = current.findIndex((id) => id === draggedBeanId);
+      const toIndex = current.findIndex((id) => id === targetBeanId);
+
+      if (fromIndex < 0 || toIndex < 0) {
+        return current;
+      }
+
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }
+
+  async function handleEditPrice(bean: BeanRecord) {
+    if (!user || !isOwner || busyBeanId) {
+      return;
+    }
+
+    const nextPriceRaw = window.prompt(`Update price for ${bean.brand}`, String(bean.price));
+    if (!nextPriceRaw) {
+      return;
+    }
+
+    const nextPrice = Number(nextPriceRaw);
+    if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+      window.alert("Please enter a valid positive price.");
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append("brand", bean.brand);
+    payload.append("price", String(nextPrice));
+    payload.append("quantity", String(bean.quantity));
+    payload.append("weight", String(bean.weight));
+    payload.append("rating", String(bean.rating));
+    payload.append("bestFor", bean.bestFor);
+    payload.append("comments", bean.comments || "");
+
+    setBusyBeanId(bean.id);
+    try {
+      const response = await fetch(`/api/beans/${bean.id}`, {
+        method: "PATCH",
+        headers: {
+          "x-user-email": user.email,
+        },
+        body: payload,
+      });
+
+      if (!response.ok) {
+        window.alert("Could not update this bean right now.");
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      window.alert("Network error while updating the bean.");
+    } finally {
+      setBusyBeanId(null);
+    }
+  }
+
+  async function handleDeleteBean(bean: BeanRecord) {
+    if (!user || !isOwner || busyBeanId) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${bean.brand}? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    setBusyBeanId(bean.id);
+    try {
+      const response = await fetch(`/api/beans/${bean.id}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-email": user.email,
+        },
+      });
+
+      if (!response.ok) {
+        window.alert("Could not delete this bean right now.");
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      window.alert("Network error while deleting the bean.");
+    } finally {
+      setBusyBeanId(null);
+    }
+  }
+
+  function handleSaveFavorite(bean: BeanRecord) {
+    if (!user) {
+      window.alert("Please sign in to save favorites.");
+      return;
+    }
+
+    const result = onSaveFavorite(bean);
+    if (!result.ok) {
+      window.alert(result.error || "Could not save this favorite.");
+      return;
+    }
+    window.alert(`${bean.brand} saved to your personal favorites.`);
+  }
 
   return (
-    <section className="beans-page">
+    <section className={`beans-page ${viewMode === "cards" ? "cards-view" : ""}`}>
       <aside className="bean-list-column">
-        <h1 className="section-label">Purchased beans</h1>
+        <div className="bean-list-header">
+          <h1 className="section-label">Purchased beans</h1>
+          <BeanViewSwitch value={viewMode} onChange={setViewMode} />
+        </div>
 
         <div className="bean-rows">
-          {sortedBeans.map((bean) => (
+          {rankedBeans.map((bean, index) => (
             <button
               key={bean.id}
               type="button"
+              draggable
               className={`bean-row ${selectedBean?.id === bean.id ? "active" : ""}`}
-              onClick={() => setSelectedId(bean.id)}
+              onClick={() => {
+                setSelectedId(bean.id);
+                setViewMode("focused");
+              }}
+              onDragStart={() => setDraggedBeanId(bean.id)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => moveBeanToPosition(bean.id)}
+              onDragEnd={() => setDraggedBeanId(null)}
             >
+              <span className="bean-rank" aria-label={`Rank ${index + 1}`}>
+                {index + 1}
+              </span>
               <div className="bean-thumb">
                 <Image
                   src={getBeanImageUrl(bean)}
@@ -258,7 +440,72 @@ function BeansLibraryPanel({
               </div>
               <div className="bean-row-info">
                 <h3 className="bean-row-brand">{bean.brand}</h3>
-                <span className="bean-row-price">{formatCurrency(bean.price)}</span>
+                <span className="bean-row-price">
+                  {formatCurrency(bean.price)} · {formatUnitPrice(bean)}/g
+                </span>
+                {user ? (
+                  <span className="bean-row-actions">
+                    {isOwner ? (
+                      <>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="bean-row-action"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleEditPrice(bean);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void handleEditPrice(bean);
+                            }
+                          }}
+                        >
+                          Edit price
+                        </span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="bean-row-action danger"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleDeleteBean(bean);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void handleDeleteBean(bean);
+                            }
+                          }}
+                        >
+                          {busyBeanId === bean.id ? "..." : "Delete"}
+                        </span>
+                      </>
+                    ) : (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="bean-row-action"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSaveFavorite(bean);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleSaveFavorite(bean);
+                          }
+                        }}
+                      >
+                        {favoriteBeanIds.has(bean.id) ? "Saved" : "Save favorite"}
+                      </span>
+                    )}
+                  </span>
+                ) : null}
               </div>
             </button>
           ))}
@@ -270,7 +517,17 @@ function BeansLibraryPanel({
         </button>
       </aside>
 
-      {selectedBean ? (
+      {viewMode === "cards" ? (
+        <BeansGallery
+          beans={rankedBeans}
+          selectedBeanId={selectedBean?.id}
+          onSelectBean={(beanId) => {
+            setSelectedId(beanId);
+            setViewMode("focused");
+          }}
+          onAddBeanClick={onAddBeanClick}
+        />
+      ) : selectedBean ? (
         <>
           <BeanHero bean={selectedBean} />
           <BeanDetails bean={selectedBean} />
@@ -281,6 +538,100 @@ function BeansLibraryPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function BeanViewSwitch({
+  value,
+  onChange,
+}: {
+  value: BeanLibraryView;
+  onChange: (value: BeanLibraryView) => void;
+}) {
+  return (
+    <div className="bean-view-switch" aria-label="Bean library view">
+      <button
+        type="button"
+        className={value === "focused" ? "active" : ""}
+        onClick={() => onChange("focused")}
+      >
+        Focused
+      </button>
+      <button
+        type="button"
+        className={value === "cards" ? "active" : ""}
+        onClick={() => onChange("cards")}
+      >
+        Big cards
+      </button>
+    </div>
+  );
+}
+
+function BeansGallery({
+  beans,
+  selectedBeanId,
+  onSelectBean,
+  onAddBeanClick,
+}: {
+  beans: BeanRecord[];
+  selectedBeanId?: string;
+  onSelectBean: (beanId: string) => void;
+  onAddBeanClick: () => void;
+}) {
+  if (beans.length === 0) {
+    return (
+      <div className="beans-gallery-empty">
+        <p>No beans yet. Add your first bag to start the library.</p>
+        <button type="button" className="add-bean-btn" onClick={onAddBeanClick}>
+          <span aria-hidden="true">+</span>
+          Add a bean
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="beans-gallery">
+      {beans.map((bean) => (
+        <button
+          key={bean.id}
+          type="button"
+          className={`bean-gallery-card ${selectedBeanId === bean.id ? "active" : ""}`}
+          onClick={() => onSelectBean(bean.id)}
+        >
+          <div className="bean-gallery-image-wrap">
+            <Image
+              src={getBeanImageUrl(bean)}
+              alt={bean.brand}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1100px) 33vw, 260px"
+              className="bean-gallery-image"
+            />
+          </div>
+          <div className="bean-gallery-copy">
+            <div>
+              <h2>{bean.brand}</h2>
+              <p>{bean.bestFor}</p>
+            </div>
+            <dl>
+              <div>
+                <dt>Total</dt>
+                <dd>{formatCurrency(bean.price)}</dd>
+              </div>
+              <div>
+                <dt>Unit</dt>
+                <dd>{formatUnitPrice(bean)}/g</dd>
+              </div>
+              <div>
+                <dt>Weight</dt>
+                <dd>{formatPurchasedWeight(bean)}g</dd>
+              </div>
+            </dl>
+          </div>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -327,8 +678,15 @@ function BeanDetails({ bean }: { bean: BeanRecord }) {
             <span className="detail-icon">
               <ScaleIcon />
             </span>
-            <span className="detail-amount">{bean.weight}g</span>
+            <span className="detail-amount">{formatPurchasedWeight(bean)}g</span>
             <span className="detail-name">weight</span>
+          </li>
+          <li>
+            <span className="detail-icon">
+              <EuroIcon />
+            </span>
+            <span className="detail-amount">{formatUnitPrice(bean)}/g</span>
+            <span className="detail-name">unit price</span>
           </li>
           <li>
             <span className="detail-icon">
@@ -367,6 +725,20 @@ function BeanDetails({ bean }: { bean: BeanRecord }) {
       </section>
     </div>
   );
+}
+
+function formatPurchasedWeight(bean: BeanRecord) {
+  return bean.weight * Math.max(bean.quantity, 1);
+}
+
+function formatUnitPrice(bean: BeanRecord) {
+  const totalWeight = formatPurchasedWeight(bean);
+
+  if (totalWeight <= 0) {
+    return formatCurrency(0);
+  }
+
+  return formatCurrency(bean.price / totalWeight);
 }
 
 function EuroIcon() {
